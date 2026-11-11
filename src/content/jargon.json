@@ -1,0 +1,137 @@
+{
+  "terms": [
+    {
+      "id": "ticket",
+      "term": "Ticket",
+      "meaning": "A written task on the team's board, with an owner and a status.",
+      "analogy": "A sticky note on a kitchen order rail: what to make, who is making it, and whether it is done.",
+      "example": "ORD-14: Rename the checkout button to Place order.",
+      "guide": "reading-a-jira-board"
+    },
+    {
+      "id": "jira-board",
+      "term": "Jira board",
+      "meaning": "A board of columns that shows every ticket and how far along it is.",
+      "analogy": "The order rail in a restaurant kitchen, with columns for waiting, cooking, plating and served.",
+      "example": "To do, In progress, Review and Done.",
+      "guide": "reading-a-jira-board"
+    },
+    {
+      "id": "repository",
+      "term": "Repository",
+      "meaning": "The folder that holds a project's code together with its full history of changes.",
+      "analogy": "A shared recipe book that remembers every edit anyone ever made.",
+      "example": "The Bowlful app lives in one repository on GitHub.",
+      "guide": "what-is-a-branch"
+    },
+    {
+      "id": "branch",
+      "term": "Branch",
+      "meaning": "Your own copy of the code to work on, separate from what everyone else is using.",
+      "analogy": "Photocopying a page of the shared notebook so you can scribble on it without touching the original.",
+      "example": "feature/ORD-14-place-order-button",
+      "command": "git checkout -b feature/ORD-14-place-order-button",
+      "guide": "what-is-a-branch"
+    },
+    {
+      "id": "main-branch",
+      "term": "Main",
+      "meaning": "The branch that holds the team's agreed, working code. What goes live comes from here.",
+      "analogy": "The master recipe that the restaurant actually cooks from.",
+      "example": "A change reaches customers only after it is merged into main.",
+      "guide": "why-we-never-push-directly-to-main"
+    },
+    {
+      "id": "commit",
+      "term": "Commit",
+      "meaning": "A saved snapshot of your changes, with a short message saying what changed.",
+      "analogy": "Saving a numbered version of a document, with a note on what you edited.",
+      "example": "ORD-14 Rename checkout button to Place order",
+      "command": "git commit -m \"ORD-14 Rename checkout button to Place order\"",
+      "shortcut": "Ctrl+Enter in the VS Code source control message box",
+      "guide": "what-is-a-branch"
+    },
+    {
+      "id": "pull",
+      "term": "Pull",
+      "meaning": "Bring the newest changes from GitHub into your copy.",
+      "analogy": "Checking the shared notebook for new pages before you start writing.",
+      "example": "Marcus added a delivery fee while you were away; a pull brings it to you.",
+      "command": "git pull origin main",
+      "guide": "what-is-a-branch"
+    },
+    {
+      "id": "push",
+      "term": "Push",
+      "meaning": "Send your commits from your computer up to GitHub so others can see them.",
+      "analogy": "Handing your finished pages to the team's shared folder.",
+      "example": "Your branch appears on GitHub after you push it.",
+      "command": "git push -u origin feature/ORD-14-place-order-button",
+      "guide": "what-is-a-branch"
+    },
+    {
+      "id": "remote-origin",
+      "term": "Origin",
+      "meaning": "The usual name for the shared copy of the repository on GitHub.",
+      "analogy": "The master notebook that lives in the team office, while yours is a copy on your desk.",
+      "example": "git pull origin main means: pull main from the shared copy.",
+      "guide": "what-is-a-branch"
+    },
+    {
+      "id": "pull-request",
+      "term": "Pull request (PR)",
+      "meaning": "A request to add your branch's changes to main, which also opens a place for tests and review.",
+      "analogy": "Handing in your homework for a teacher to check before it goes in the class book.",
+      "example": "PR #1: ORD-14 Rename checkout button to Place order.",
+      "guide": "what-is-a-pull-request"
+    },
+    {
+      "id": "code-review",
+      "term": "Code review",
+      "meaning": "A teammate reads your change and either approves it or asks for edits.",
+      "analogy": "A second cook tasting the dish before it leaves the kitchen.",
+      "example": "A reviewer approves the PR after reading the one-word change.",
+      "guide": "what-is-a-pull-request"
+    },
+    {
+      "id": "automated-tests",
+      "term": "Automated tests",
+      "meaning": "Small programs that check, in seconds, that the code still does what it should.",
+      "analogy": "A checklist the kitchen runs on every plate before it is served.",
+      "example": "A test checks that the checkout button says Place order.",
+      "guide": "what-are-automated-tests"
+    },
+    {
+      "id": "merge",
+      "term": "Merge",
+      "meaning": "Combine the changes from one branch into another.",
+      "analogy": "Taping your edited page back into the shared notebook.",
+      "example": "Merging your PR adds your branch's commits to main.",
+      "guide": "what-is-a-merge-conflict"
+    },
+    {
+      "id": "merge-conflict",
+      "term": "Merge conflict",
+      "meaning": "Git cannot combine two changes because two people edited the same lines differently.",
+      "analogy": "Two people erased and rewrote the same sentence in the same notebook.",
+      "example": "You and Marcus both changed the delivery fee line.",
+      "guide": "what-is-a-merge-conflict"
+    },
+    {
+      "id": "api-contract",
+      "term": "API contract",
+      "meaning": "An agreement on what a request and a response look like, so frontend and backend can build at the same time.",
+      "analogy": "The order form both the waiter and the kitchen agree on before service starts.",
+      "example": "POST /orders returns { \"id\": 412, \"etaMinutes\": 35 }.",
+      "guide": "what-is-an-api-contract"
+    },
+    {
+      "id": "deploy",
+      "term": "Deploy",
+      "meaning": "Release the new version so real users get it.",
+      "analogy": "Putting the new dish on the menu after it passes the taste test.",
+      "example": "After the merge, the live Bowlful app shows Place order.",
+      "guide": "why-we-never-push-directly-to-main"
+    }
+  ]
+}

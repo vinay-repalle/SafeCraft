@@ -13,16 +13,20 @@ Done when: the app opens, light/dark/system theme works and survives reload, exp
 - [x] Zustand store with localStorage (`src/store/`)
 - [x] Progress export/import (`src/utils/progressFile.ts`)
 - [x] Unslop audit: see [AUDIT-phase-1.md](AUDIT-phase-1.md)
-- [ ] Owner check of the "done when" gate, then Git
+- [x] Owner check of the "done when" gate, then Git
 
 ## Phase 2: Engine and Level 1 data
 Done when: a Level 1 run passes in a test harness and the engine emits events.
-- [ ] gitSim
-- [ ] jiraSim
-- [ ] testRunner
-- [ ] levelRunner
-- [ ] jargon.json
-- [ ] level1.json (food ordering app)
+- [x] gitSim (`src/engine/gitSim.ts`: branches, commits, pull, push, conflicts, plus the GitHub pull request side)
+- [x] jiraSim (`src/engine/jiraSim.ts`)
+- [x] testRunner (`src/engine/testRunner.ts`)
+- [x] levelRunner (`src/engine/levelRunner.ts`: steps, Sync Check gates, mistakes, events, Skip & Auto-Fill)
+- [x] jargon.json (16 terms)
+- [x] level1.json (food ordering app, 13 steps, 8 replay rules)
+- [x] Test harness: Vitest, `npm test`, 61 tests including full Level 1 runs
+- [x] Level data validator and authoring guide: [LEVEL-AUTHORING.md](LEVEL-AUTHORING.md)
+- [x] Unslop audit: see [AUDIT-phase-2.md](AUDIT-phase-2.md)
+- [ ] Owner check of the "done when" gate, then Git
 
 ## Phase 3: Level 1 playable (demo)
 Done when: Level 1 plays end to end in My View.
