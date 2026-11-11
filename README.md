@@ -6,7 +6,7 @@ Everything runs in the browser. There is no backend, no database and no login.
 
 ## Status
 
-Planning. See [docs/TRACKER.md](docs/TRACKER.md) for progress and [the PRD](<docs/SyncCraft Master PRD & Technical Blueprint.md>) for the full plan.
+Phase 1 (foundation) is built and waiting for owner check. See [docs/TRACKER.md](docs/TRACKER.md) for progress and [the PRD](<docs/SyncCraft Master PRD & Technical Blueprint.md>) for the full plan.
 
 ## Stack
 
@@ -14,12 +14,13 @@ React, Vite, TypeScript, Tailwind CSS, React Three Fiber, CodeMirror, Zustand.
 
 ## Getting started
 
-Not set up yet. Setup commands arrive with Phase 1.
-
 ```bash
 npm install
-npm run dev
+npm run dev      # development server
+npm run build    # typecheck and production build
 ```
+
+Desktop only: designed for windows 1280px wide or more.
 
 ## Docs
 

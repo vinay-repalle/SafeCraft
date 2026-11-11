@@ -6,12 +6,14 @@ Claude writes files and lists what changed. The owner runs it, checks the "done 
 
 ## Phase 1: Foundation
 Done when: the app opens, light/dark/system theme works and survives reload, exported progress imports back.
-- [x] Vite, React, TypeScript, Tailwind setup (step 1; palette approved, wiring starts at step 2)
-- [ ] Design tokens (neutral ramp, one accent, type, spacing)
-- [ ] Theme: light, dark, system
-- [ ] App shell, role bar, view tabs
-- [ ] Zustand store with localStorage
-- [ ] Progress export/import
+- [x] Vite, React, TypeScript, Tailwind setup
+- [x] Design tokens (neutral ramp, one accent, type, spacing) in `src/index.css`
+- [x] Theme: light, dark, system (default system, saved, no flash on load)
+- [x] App shell, role bar, view tabs (placeholder views only)
+- [x] Zustand store with localStorage (`src/store/`)
+- [x] Progress export/import (`src/utils/progressFile.ts`)
+- [x] Unslop audit: see [AUDIT-phase-1.md](AUDIT-phase-1.md)
+- [ ] Owner check of the "done when" gate, then Git
 
 ## Phase 2: Engine and Level 1 data
 Done when: a Level 1 run passes in a test harness and the engine emits events.
