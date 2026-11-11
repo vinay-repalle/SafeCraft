@@ -7,7 +7,7 @@
 - Only write and edit files, then list what changed.
 
 ## Project
-- Read `SyncCraft Master PRD & Technical Blueprint.md` before planning. Follow its folder structure and phases.
+- Read `docs/SyncCraft Master PRD & Technical Blueprint.md` before planning. Follow its folder structure and phases.
 - Track progress in `docs/TRACKER.md`.
 - Follow `docs/DESIGN.md` (unslop rules) for all UI work.
 - Stack: React, Vite, TypeScript, Tailwind, React Three Fiber, CodeMirror, Zustand. Package manager: npm.

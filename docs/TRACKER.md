@@ -6,7 +6,7 @@ Claude writes files and lists what changed. The owner runs it, checks the "done 
 
 ## Phase 1: Foundation
 Done when: the app opens, light/dark/system theme works and survives reload, exported progress imports back.
-- [ ] Vite, React, TypeScript, Tailwind setup
+- [x] Vite, React, TypeScript, Tailwind setup (step 1; palette approved, wiring starts at step 2)
 - [ ] Design tokens (neutral ramp, one accent, type, spacing)
 - [ ] Theme: light, dark, system
 - [ ] App shell, role bar, view tabs
@@ -56,5 +56,6 @@ Done when: v1 scope works, the unslop checklist passes, the build is ready to de
 - [ ] Deploy readiness
 
 ## Open items
-- [ ] Palette: Claude proposes tokens in Phase 1, owner approves
+- [x] Palette: warm ramp with paprika accent, Figtree and JetBrains Mono, approved by owner
+- [x] Doc fixes: PRD path in CLAUDE.md and README, theme type includes 'system', editor is CodeMirror
 - [ ] LICENSE: owner to choose

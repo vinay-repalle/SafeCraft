@@ -1,0 +1,4 @@
+/* Tailwind v4 is configured in CSS, not in a tailwind.config file.
+   This one line pulls in all of Tailwind's utility classes.
+   Design tokens will be added here in step 2, after palette approval. */
+@import "tailwindcss";

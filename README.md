@@ -6,7 +6,7 @@ Everything runs in the browser. There is no backend, no database and no login.
 
 ## Status
 
-Planning. See [docs/TRACKER.md](docs/TRACKER.md) for progress and [the PRD](<SyncCraft Master PRD & Technical Blueprint.md>) for the full plan.
+Planning. See [docs/TRACKER.md](docs/TRACKER.md) for progress and [the PRD](<docs/SyncCraft Master PRD & Technical Blueprint.md>) for the full plan.
 
 ## Stack
 
@@ -23,7 +23,7 @@ npm run dev
 
 ## Docs
 
-- [PRD and technical blueprint](<SyncCraft Master PRD & Technical Blueprint.md>)
+- [PRD and technical blueprint](<docs/SyncCraft Master PRD & Technical Blueprint.md>)
 - [Build tracker](docs/TRACKER.md)
 - [Design rules](docs/DESIGN.md)
 

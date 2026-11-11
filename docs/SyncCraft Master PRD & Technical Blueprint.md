@@ -178,7 +178,7 @@ Content files feed the engine; the engine emits events that every on-screen zone
 | Framework | React with Vite and TypeScript |
 | Styling | Tailwind CSS |
 | 3D | React Three Fiber and drei |
-| Code editor | Monaco Editor (or CodeMirror if lighter) |
+| Code editor | CodeMirror |
 | Tests and PR checks | Client-side JavaScript rule or AST checks that simulate unit tests |
 | State | Zustand, persisted to localStorage |
 | Docs | Local Markdown/MDX files rendered in the Field Guide |
@@ -246,7 +246,7 @@ type Step = {
 type Progress = {
   completed: Record<number, { frontend?: boolean; backend?: boolean }>;
   badges: string[]; seenTerms: string[]; guidesRead: string[];
-  settings: { jargonMode: 'off' | 'first' | 'always'; theme: 'light' | 'dark'; proMode: boolean; role: string };
+  settings: { jargonMode: 'off' | 'first' | 'always'; theme: 'light' | 'dark' | 'system'; proMode: boolean; role: string };
 };
 ```
 
