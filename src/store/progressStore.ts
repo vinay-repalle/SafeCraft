@@ -12,6 +12,10 @@ type Actions = {
   setRole: (role: Role) => void
   // Swap in a whole Progress at once (used by import).
   replaceProgress: (progress: Progress) => void
+  // The Jargon Helper remembers which terms the learner has already met.
+  markTermSeen: (id: string) => void
+  // Only the two playable roles can complete a level in v1.
+  markLevelCompleted: (level: number, role: 'frontend' | 'backend') => void
 }
 
 export const STORAGE_KEY = 'synccraft-progress'
@@ -35,6 +39,9 @@ export const useProgressStore = create<Progress & Actions>()(
       setJargonMode: (jargonMode) => set((s) => ({ settings: { ...s.settings, jargonMode } })),
       setRole: (role) => set((s) => ({ settings: { ...s.settings, role } })),
       replaceProgress: (progress) => set(progress),
+      markTermSeen: (id) => set((s) => (s.seenTerms.includes(id) ? s : { seenTerms: [...s.seenTerms, id] })),
+      markLevelCompleted: (level, role) =>
+        set((s) => ({ completed: { ...s.completed, [level]: { ...s.completed[level], [role]: true } } })),
     }),
     {
       name: STORAGE_KEY,

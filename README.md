@@ -6,7 +6,7 @@ Everything runs in the browser. There is no backend, no database and no login.
 
 ## Status
 
-Phase 2 (simulation engine and Level 1 data) is built and waiting for owner check. See [docs/TRACKER.md](docs/TRACKER.md) for progress and [the PRD](<docs/SyncCraft Master PRD & Technical Blueprint.md>) for the full plan.
+Phase 3 (Level 1 playable in My view) is built and waiting for owner check. See [docs/TRACKER.md](docs/TRACKER.md) for progress and [the PRD](<docs/SyncCraft Master PRD & Technical Blueprint.md>) for the full plan.
 
 ## Stack
 
@@ -18,7 +18,7 @@ React, Vite, TypeScript, Tailwind CSS, React Three Fiber, CodeMirror, Zustand.
 npm install
 npm run dev      # development server
 npm run build    # typecheck and production build
-npm test         # engine and Level 1 tests
+npm test         # engine, store and Level 1 tests
 ```
 
 Desktop only: designed for windows 1280px wide or more.

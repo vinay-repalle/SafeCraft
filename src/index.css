@@ -150,6 +150,11 @@
     outline-offset: 2px;
   }
 
+  /* Popups: a flat dim layer behind the dialog, no blur. */
+  dialog.dialog-surface::backdrop {
+    background: rgb(0 0 0 / 0.4);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

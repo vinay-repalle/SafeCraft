@@ -39,7 +39,7 @@ export type RunnerSnapshot = {
   mistakes: MistakeRecord[]
   board: Record<TicketStatus, Ticket[]>
   git: { branch: string; branches: string[]; remoteBranches: string[]; files: Files; behindMain: number; conflicts: string[] }
-  pullRequests: PullRequest[]
+  pullRequests: (PullRequest & { outOfDate: boolean; mergeable: boolean })[]
   lastTestReport: TestReport | null
   deployed: boolean
   sync: { start: SyncState; push: SyncState }
@@ -113,7 +113,10 @@ export class LevelRunner {
         behindMain: this.git.behindBy(this.git.currentBranch()),
         conflicts: this.git.conflictedFiles(),
       },
-      pullRequests: this.git.pullRequests(),
+      pullRequests: this.git.pullRequests().map((pr) => {
+        const status = this.git.prStatus(pr.id)
+        return { ...pr, outOfDate: status?.outOfDate ?? false, mergeable: status?.mergeable ?? true }
+      }),
       lastTestReport: this.lastReport,
       deployed: this.deployed,
       sync: { ...this.sync },
@@ -264,8 +267,9 @@ export class LevelRunner {
       case 'git': {
         const outputs: string[] = []
         for (const line of fill.split('\n').filter(Boolean)) {
-          const result = this.applyGit(line.replaceAll('{branch}', this.git.currentBranch()))
-          outputs.push(`$ ${line}`, result.message)
+          const command = line.replaceAll('{branch}', this.git.currentBranch())
+          const result = this.applyGit(command)
+          outputs.push(`$ ${command}`, result.message)
           if (!result.ok) return { ...result, message: outputs.join('\n') }
         }
         return { ok: true, message: outputs.join('\n') }

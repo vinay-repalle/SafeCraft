@@ -28,4 +28,4 @@ A level is data. Adding Level 2 to 5 should mean writing `src/content/levels/lev
 
 ## Writing rules
 
-Follow `docs/DESIGN.md` for copy: sentence case, no exclamation marks, no greetings or hype, realistic mock data, plain language. Every term used in a step must exist in `src/content/jargon.json`.
+Follow `docs/DESIGN.md` for copy: sentence case, no exclamation marks, no greetings or hype, realistic mock data, plain language. Every term used in a step must exist in `src/content/jargon.json`. A term is only underlined if its word appears in that step's prompt, so write the prompt with the word in it ("assigned you a ticket"); the first-time card shows either way.

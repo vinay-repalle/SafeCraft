@@ -23,10 +23,11 @@ export function App() {
   const View = VIEW_COMPONENTS[view]
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-screen flex-col">
       <Header view={view} onViewChange={setView} />
       <RoleBar />
-      <main className="flex-1 p-6">
+      {/* The window never scrolls; each zone scrolls inside itself. */}
+      <main className="min-h-0 flex-1 overflow-auto p-4">
         <View />
       </main>
     </div>

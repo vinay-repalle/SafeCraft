@@ -30,12 +30,16 @@ Done when: a Level 1 run passes in a test harness and the engine emits events.
 
 ## Phase 3: Level 1 playable (demo)
 Done when: Level 1 plays end to end in My View.
-- [ ] Jira board and chat
-- [ ] CodeMirror editor and Git buttons with real commands
-- [ ] Sync Check popup
-- [ ] Jargon Helper
-- [ ] Skip & Auto-Fill
-- [ ] Mistakes Replay
+- [x] Jira board and chat (`src/components/jira/`; order-ticket tag on every ticket)
+- [x] CodeMirror editor and Git buttons with real commands (`src/components/editor/`; buttons show the command, a mini terminal logs it)
+- [x] Sync Check popup (pull before start and before push; type, hint, skip and auto-run, ignore)
+- [x] Jargon Helper (underlined terms, hover and first-time cards, Off / First time / Always, cheat sheet panel)
+- [x] Skip & Auto-Fill (on every learner step)
+- [x] Mistakes Replay
+- [x] Pull request page and test log, and a flat pipeline station list (the 3D scene replaces the list in Phase 4)
+- [x] Level store bridging engine and UI (`src/store/levelStore.ts`), with tests
+- [x] Unslop audit: see [AUDIT-phase-3.md](AUDIT-phase-3.md)
+- [ ] Owner check of the "done when" gate, then Git
 
 ## Phase 4: 3D pipeline and views
 Done when: Level 1 drives the 3D scene and all views work smoothly.

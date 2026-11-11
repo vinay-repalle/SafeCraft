@@ -95,7 +95,7 @@
       "id": "read-ticket-message",
       "role": "frontend",
       "kind": "chat",
-      "prompt": "Priya, the project manager, has sent you a message about ORD-14. Choose a reply.",
+      "prompt": "Priya, the project manager, has assigned you a ticket. Read her message and choose a reply.",
       "chat": {
         "id": "intro",
         "from": { "name": "Priya Nair", "role": "pm" },

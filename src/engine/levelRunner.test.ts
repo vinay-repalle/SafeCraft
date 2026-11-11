@@ -162,6 +162,14 @@ describe('Level 1: Skip & Auto-Fill', () => {
     expect(branch.message).toContain("Switched to a new branch 'feature/ORD-14-place-order-button'")
   })
 
+  it('shows the real branch name in the pushed command, never the {branch} placeholder', () => {
+    const r = newRunner()
+    while (r.currentStep()?.id !== 'push-branch') r.act({ type: 'autoFill' })
+    const push = r.act({ type: 'autoFill' })
+    expect(push.message).toContain(`$ git push -u origin ${BRANCH}`)
+    expect(push.message).not.toContain('{branch}')
+  })
+
   it('has nothing to fill on a step the engine runs itself', () => {
     const r = newRunner()
     // Fast-forward to the engine-owned tests step by auto-filling the learner steps.

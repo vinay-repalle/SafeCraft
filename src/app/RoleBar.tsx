@@ -12,7 +12,7 @@ export function RoleBar() {
   ]
 
   return (
-    <div className="flex h-14 items-center justify-between border-b border-line px-6">
+    <div className="flex h-14 shrink-0 items-center justify-between border-b border-line px-6">
       <div role="group" aria-label="Role" className="flex items-center gap-6">
         {groups.map((group, i) => (
           <div key={group.label} className="flex items-center gap-2">
