@@ -2,25 +2,20 @@ import { FastForward } from 'lucide-react'
 import { ROLE_INFO } from '../app/nav'
 import { MistakesReplay } from '../components/popups/MistakesReplay'
 import { SyncCheck } from '../components/popups/SyncCheck'
+import { STATE_DOT, TicketJourney } from '../components/team/TicketJourney'
 import { BUTTON, PANEL } from '../components/ui'
 import { useCurrentStep, useLevelStore } from '../store/levelStore'
 import { useProgressStore } from '../store/progressStore'
 import { roleLabel, roleStatuses, type FeedItem, type RoleState } from '../store/teamFeed'
+import { ticketJourney } from '../store/ticketJourney'
 import type { Role } from '../store/types'
 import { useEnsureLevel } from '../store/useEnsureLevel'
-
-// Flat status chip: the dot colour repeats the state, the words carry it.
-const STATE_DOT: Record<RoleState, string> = {
-  active: 'bg-accent',
-  automatic: 'bg-accent',
-  waiting: 'bg-ink-3',
-  done: 'bg-pass',
-  uninvolved: 'bg-line',
-}
 
 // Team view: every role side by side. Whatever happens in My view shows up here as it
 // happens: the role that acted, the roles that now have something to react to, and who is
 // waiting on whom. Read-only; you play the level in My view.
+// Above the columns, the ticket journey (Phase 7f) shows who holds the ticket, each desk right
+// over its column.
 export function TeamView() {
   useEnsureLevel()
   const runner = useLevelStore((s) => s.runner)
@@ -32,6 +27,7 @@ export function TeamView() {
 
   if (!runner) return null
   const statuses = roleStatuses(runner.level, step, finished)
+  const journey = ticketJourney(runner.level, step?.id ?? null, finished)
   const summary = step ? summarize(step.role, statuses[step.role].state) : 'The level is finished. Everyone has done their part.'
 
   return (
@@ -47,6 +43,7 @@ export function TeamView() {
           Skip and auto-fill this step
         </button>
       </header>
+      <TicketJourney journey={journey} statuses={statuses} />
       <div className="grid min-h-0 flex-1 grid-cols-5 items-start gap-4">
         {ROLE_INFO.map(({ id }) => (
           <RoleColumn key={id} role={id} status={statuses[id]} feed={feed} you={id === myRole} />

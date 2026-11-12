@@ -15,7 +15,7 @@ import { mix, stateColor, type SceneColors } from './sceneColors'
 type Vec3 = [number, number, number]
 
 // One flat-coloured box. `pos` is the centre of the box.
-function Part({ size, pos, color, rot }: { size: Vec3; pos: Vec3; color: string; rot?: Vec3 }) {
+export function Part({ size, pos, color, rot }: { size: Vec3; pos: Vec3; color: string; rot?: Vec3 }) {
   return (
     <mesh position={pos} rotation={rot}>
       <boxGeometry args={size} />
@@ -24,7 +24,7 @@ function Part({ size, pos, color, rot }: { size: Vec3; pos: Vec3; color: string;
   )
 }
 
-function Cylinder({ radius, height, pos, color, sides = 8, top }: { radius: number; height: number; pos: Vec3; color: string; sides?: number; top?: number }) {
+export function Cylinder({ radius, height, pos, color, sides = 8, top }: { radius: number; height: number; pos: Vec3; color: string; sides?: number; top?: number }) {
   return (
     <mesh position={pos}>
       <cylinderGeometry args={[top ?? radius, radius, height, sides]} />
@@ -33,7 +33,7 @@ function Cylinder({ radius, height, pos, color, sides = 8, top }: { radius: numb
   )
 }
 
-function Blob({ radius, pos, color, detail = 0, scale }: { radius: number; pos: Vec3; color: string; detail?: number; scale?: Vec3 }) {
+export function Blob({ radius, pos, color, detail = 0, scale }: { radius: number; pos: Vec3; color: string; detail?: number; scale?: Vec3 }) {
   return (
     <mesh position={pos} scale={scale}>
       <icosahedronGeometry args={[radius, detail]} />
@@ -42,7 +42,7 @@ function Blob({ radius, pos, color, detail = 0, scale }: { radius: number; pos: 
   )
 }
 
-function Person({ pos, shirt, skin, turn = 0 }: { pos: Vec3; shirt: string; skin: string; turn?: number }) {
+export function Person({ pos, shirt, skin, turn = 0 }: { pos: Vec3; shirt: string; skin: string; turn?: number }) {
   return (
     <group position={pos} rotation={[0, turn, 0]}>
       <Cylinder radius={0.26} top={0.2} height={0.64} pos={[0, 0.32, 0]} color={shirt} />
@@ -70,7 +70,7 @@ export function useShadowTexture(): CanvasTexture {
   return texture
 }
 
-function Shadow({ texture, size, pos }: { texture: CanvasTexture; size: [number, number]; pos: [number, number] }) {
+export function Shadow({ texture, size, pos }: { texture: CanvasTexture; size: [number, number]; pos: [number, number] }) {
   return (
     <mesh position={[pos[0], 0.172, pos[1]]} rotation={[-Math.PI / 2, 0, 0]}>
       <planeGeometry args={size} />
@@ -79,7 +79,7 @@ function Shadow({ texture, size, pos }: { texture: CanvasTexture; size: [number,
   )
 }
 
-const PAD_HEIGHT = 0.16
+export const PAD_HEIGHT = 0.16
 
 // The floor pad every station stands on. Passed and failed tint the whole pad; the station
 // that has the work gets a thin accent frame. Everything is flat colour.
@@ -113,7 +113,7 @@ function Pennant({ state, c }: { state: StationState; c: SceneColors }) {
 
 type BodyProps = { c: SceneColors; state: StationState; conflict: boolean }
 
-function Desk({ c, width = 1.5 }: { c: SceneColors; width?: number }) {
+export function Desk({ c, width = 1.5 }: { c: SceneColors; width?: number }) {
   const wood = mix(c.raised, c.ink3, 0.55)
   return (
     <>

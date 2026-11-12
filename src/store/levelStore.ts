@@ -13,6 +13,7 @@ import { STATIONS, type Action, type ActionResult, type Level, type Station, typ
 import type { Role } from './types'
 import { useProgressStore } from './progressStore'
 import { describeEvent, type FeedItem } from './teamFeed'
+import type { TestRun } from '../components/pipeline/pipelineMotion'
 
 export type StationState = 'idle' | 'active' | 'done' | 'pass' | 'fail'
 export type ChatLine = { id: number; speaker: string; side: 'them' | 'you'; text: string }
@@ -47,6 +48,13 @@ type LevelState = {
 
   // True while a teammate is working in the same code and the level is about a merge conflict, so the 3D scene shows a second developer.
   teammateActive: boolean
+
+  // Phase 7g. The latest automated test run, so the pipeline can play it over a short time
+  // (the conveyor) before showing the result. null until the tests first run in this level.
+  testRun: TestRun | null
+  // Phase 7g. The station the parcel left when a pull stopped on a merge conflict. The parcel
+  // waits in the gap after it until the change is pushed on. null when nothing is stalled.
+  stallAt: Station | null
 
   load: (levelId: number, options?: { skipRecap?: boolean; role?: PlayableRole }) => void
   act: (action: Action) => ActionResult
@@ -138,7 +146,8 @@ export const useLevelStore = create<LevelState>()((set, get) => {
           stations[station] = status
           // The package only travels when the event names where it came from. Otherwise it stays put
           // and the station just changes colour (for example the review passing at GitHub).
-          return packageFrom ? { stations, packageFrom: s.packageAt, packageAt: station } : { stations }
+          // Moving on also ends a stall: the parcel has got past the conflict.
+          return packageFrom ? { stations, packageFrom: s.packageAt, packageAt: station, stallAt: null } : { stations }
         })
         break
       }
@@ -148,6 +157,10 @@ export const useLevelStore = create<LevelState>()((set, get) => {
         break
       case 'git:pull':
         set({ teammateActive: false })
+        if (event.result === 'conflict') set((s) => ({ stallAt: s.packageAt }))
+        break
+      case 'tests:run':
+        set((s) => ({ testRun: { seq: (s.testRun?.seq ?? 0) + 1, passed: event.passed, startedAt: Date.now() } }))
         break
       case 'mistake': {
         // Gentle mode: a warning, no penalty. The full explanation comes in the replay.
@@ -195,6 +208,8 @@ export const useLevelStore = create<LevelState>()((set, get) => {
     levelId: 1,
     playRole: 'frontend' as PlayableRole,
     teammateActive: false,
+    testRun: null,
+    stallAt: null,
     runner: null,
     snapshot: null,
     chat: [],
@@ -217,6 +232,8 @@ export const useLevelStore = create<LevelState>()((set, get) => {
         levelId,
         playRole: role,
         teammateActive: false,
+        testRun: null,
+        stallAt: null,
         runner,
         snapshot: runner.snapshot(),
         chat: [],

@@ -19,3 +19,10 @@ export const STATE_TEXT: Record<StationState, string> = {
   pass: 'Passed',
   fail: 'Failed',
 }
+
+// Phase 7g: while a test run plays, the test server says so in words, not only in colour.
+export const RUNNING_TEXT = 'Running the tests'
+
+export function stationText(id: Station, state: StationState, running: boolean): string {
+  return running && id === 'tests' ? RUNNING_TEXT : STATE_TEXT[state]
+}

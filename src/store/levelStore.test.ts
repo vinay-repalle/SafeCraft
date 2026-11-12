@@ -259,3 +259,52 @@ describe('levelStore: levels and roles', () => {
     expect(graph.nodes.some((n) => n.kind === 'teammate' && n.author === 'Aisha Khan')).toBe(true)
   })
 })
+
+// Phase 7g: what the pipeline needs to play the test conveyor, the failure shake and the stall.
+describe('levelStore pipeline motion', () => {
+  const autoFillUntil = (stepId: string) => {
+    for (let i = 0; i < 60 && level().snapshot?.currentStepId !== stepId; i++) level().autoFill()
+  }
+
+  it('records each test run with its result and start time, and a new level clears it', () => {
+    level().load(3, { skipRecap: true })
+    expect(level().testRun).toBeNull()
+    const before = Date.now()
+    autoFillUntil('read-the-log')
+    expect(level().testRun).toMatchObject({ seq: 1, passed: false })
+    expect(level().testRun!.startedAt).toBeGreaterThanOrEqual(before)
+    expect(level().stations.tests).toBe('fail')
+    expect(level().packageAt).toBe('tests')
+    expect(level().packageFrom).toBe('github')
+
+    autoFillUntil('answer-reviewer')
+    expect(level().testRun).toMatchObject({ seq: 2, passed: true })
+
+    level().load(1, { skipRecap: true })
+    expect(level().testRun).toBeNull()
+  })
+
+  it('stalls the parcel after the developer desk when a pull stops on a conflict, and frees it on push', () => {
+    level().load(4, { skipRecap: true })
+    autoFillUntil('pull-main')
+    expect(level().stallAt).toBeNull()
+    level().autoFill() // the pull stops on the conflict
+    expect(level().snapshot?.git.conflicts.length).toBeGreaterThan(0)
+    expect(level().packageAt).toBe('dev')
+    expect(level().stallAt).toBe('dev')
+
+    autoFillUntil('sync-push')
+    // Merged, so the conflict is closed, but the work has not moved on yet.
+    expect(level().snapshot?.git.conflicts).toEqual([])
+    expect(level().stallAt).toBe('dev')
+
+    autoFillUntil('raise-pr')
+    expect(level().packageAt).toBe('github')
+    expect(level().stallAt).toBeNull()
+  })
+
+  it('does not stall in a level without a conflict', () => {
+    for (let i = 0; i < 40 && !level().snapshot?.finished; i++) level().autoFill()
+    expect(level().stallAt).toBeNull()
+  })
+})
