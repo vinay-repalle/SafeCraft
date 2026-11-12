@@ -27,13 +27,13 @@ The app has one page and no router, so no redirect or rewrite rules are needed.
 
 ## Before the first deploy
 
-Checked by Claude on 2026-11-12: `npm test` (169 passed), `npm run build` (no errors, `dist/` is 1.9 MB). You still do steps 4 and 5.
+Checked by Claude on 2026-11-12: `npm test` (169 passed), `npm run build` (no errors, `dist/` is 1.9 MB). You still do step 4.
 
 1. `npm ci`
 2. `npm test` passes.
 3. `npm run build` finishes with no errors. One warning about the 3D scene chunk being over 500 kB is expected: it loads only when the learner turns the scene on.
 4. `npm run preview`, then open the printed address and check: the theme survives a reload, a level plays, the Field guide opens, Cheat sheet and Progress card download.
-5. Choose a licence and add a `LICENSE` file (open item in [TRACKER.md](TRACKER.md)).
+5. Licence: MIT, already added as `LICENSE`.
 
 ## Deploying to Cloudflare Pages
 

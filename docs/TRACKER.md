@@ -76,5 +76,5 @@ Done when: v1 scope works, the unslop checklist passes, the build is ready to de
 ## Open items
 - [x] Palette: warm ramp with paprika accent, Figtree and JetBrains Mono, approved by owner
 - [x] Doc fixes: PRD path in CLAUDE.md and README, theme type includes 'system', editor is CodeMirror
-- [ ] LICENSE: owner to choose (needed before the first public deploy)
+- [x] LICENSE: MIT, copyright "vinay" (`LICENSE`, and `license` in `package.json`)
 - [ ] Decide whether "A day in this role" cards, "Just watch" mode and Pro Mode belong in v1 (in the PRD, not in any phase list; see AUDIT-phase-6 note 5)
