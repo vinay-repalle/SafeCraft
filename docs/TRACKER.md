@@ -65,14 +65,16 @@ Done when: all five levels are playable and the Backend role works.
 
 ## Phase 6: Field Guide, exports, polish
 Done when: v1 scope works, the unslop checklist passes, the build is ready to deploy.
-- [ ] Field Guide (5+ articles, growing to 8)
-- [ ] Cheat Sheet export
-- [ ] Progress Card
-- [ ] unslop audit pass
-- [ ] Performance check
-- [ ] Deploy readiness
+- [x] Field Guide (8 articles in `src/content/guides/`, list with read marks, linked from every term that has a guide)
+- [x] Cheat Sheet export (Markdown and PDF from the cheat sheet dialog)
+- [x] Progress Card (PNG drawn in the browser, preview and download, badges worked out from progress)
+- [x] unslop audit pass: see [AUDIT-phase-6.md](AUDIT-phase-6.md)
+- [x] Performance check (first paint 96 ms locally, 3D scene not loaded at first paint, results in the audit)
+- [x] Deploy readiness (favicon, page description, `engines`, [DEPLOY.md](DEPLOY.md))
+- [ ] Owner check of the "done when" gate, then Git
 
 ## Open items
 - [x] Palette: warm ramp with paprika accent, Figtree and JetBrains Mono, approved by owner
 - [x] Doc fixes: PRD path in CLAUDE.md and README, theme type includes 'system', editor is CodeMirror
-- [ ] LICENSE: owner to choose
+- [ ] LICENSE: owner to choose (needed before the first public deploy)
+- [ ] Decide whether "A day in this role" cards, "Just watch" mode and Pro Mode belong in v1 (in the PRD, not in any phase list; see AUDIT-phase-6 note 5)

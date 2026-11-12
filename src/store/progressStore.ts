@@ -14,6 +14,8 @@ type Actions = {
   replaceProgress: (progress: Progress) => void
   // The Jargon Helper remembers which terms the learner has already met.
   markTermSeen: (id: string) => void
+  // The Field Guide remembers which articles have been opened.
+  markGuideRead: (slug: string) => void
   // Only the two playable roles can complete a level in v1.
   markLevelCompleted: (level: number, role: 'frontend' | 'backend') => void
 }
@@ -40,6 +42,7 @@ export const useProgressStore = create<Progress & Actions>()(
       setRole: (role) => set((s) => ({ settings: { ...s.settings, role } })),
       replaceProgress: (progress) => set(progress),
       markTermSeen: (id) => set((s) => (s.seenTerms.includes(id) ? s : { seenTerms: [...s.seenTerms, id] })),
+      markGuideRead: (slug) => set((s) => (s.guidesRead.includes(slug) ? s : { guidesRead: [...s.guidesRead, slug] })),
       markLevelCompleted: (level, role) =>
         set((s) => ({ completed: { ...s.completed, [level]: { ...s.completed[level], [role]: true } } })),
     }),

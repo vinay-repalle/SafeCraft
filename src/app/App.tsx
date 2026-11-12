@@ -1,8 +1,9 @@
-import { useState, type ComponentType } from 'react'
+import { type ComponentType } from 'react'
 import { FieldGuide } from '../views/FieldGuide'
 import { MyView } from '../views/MyView'
 import { PipelineView } from '../views/PipelineView'
 import { TeamView } from '../views/TeamView'
+import { useUiStore } from '../store/uiStore'
 import { Header } from './Header'
 import type { ViewId } from './nav'
 import { RoleBar } from './RoleBar'
@@ -17,9 +18,10 @@ const VIEW_COMPONENTS: Record<ViewId, ComponentType> = {
 
 export function App() {
   useApplyTheme()
-  // useState keeps a value inside a component and re-draws it when the value changes.
-  // The open view is screen state, not progress, so it lives here and is not saved.
-  const [view, setView] = useState<ViewId>('my')
+  // The open view is screen state, not progress, so it lives in a small unsaved store.
+  // That lets a highlighted term anywhere in the app open its Field Guide article.
+  const view = useUiStore((s) => s.view)
+  const setView = useUiStore((s) => s.setView)
   const View = VIEW_COMPONENTS[view]
 
   return (

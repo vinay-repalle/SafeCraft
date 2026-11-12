@@ -1,6 +1,7 @@
 import { jargon, type JargonTerm } from '../../content'
 import { useProgressStore } from '../../store/progressStore'
 import { PANEL_BUTTON } from '../ui'
+import { GuideLink } from './GuideLink'
 
 export const findTerm = (id: string): JargonTerm | undefined => jargon.find((t) => t.id === id)
 
@@ -25,6 +26,7 @@ export function TermDetails({ term }: { term: JargonTerm }) {
           {term.shortcut}
         </p>
       )}
+      <GuideLink slug={term.guide} />
     </div>
   )
 }

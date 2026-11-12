@@ -1,6 +1,7 @@
-import { BookOpen } from 'lucide-react'
+import { BookOpen, IdCard } from 'lucide-react'
 import { useState } from 'react'
 import { CheatSheet } from '../components/jargon/CheatSheet'
+import { ProgressCardDialog } from '../components/popups/ProgressCardDialog'
 import { BUTTON } from '../components/ui'
 import { useProgressStore } from '../store/progressStore'
 import { JargonModeSwitch } from './JargonModeSwitch'
@@ -11,6 +12,7 @@ type Props = { view: ViewId; onViewChange: (view: ViewId) => void }
 
 export function Header({ view, onViewChange }: Props) {
   const [cheatOpen, setCheatOpen] = useState(false)
+  const [cardOpen, setCardOpen] = useState(false)
   const termCount = useProgressStore((s) => s.seenTerms.length)
 
   return (
@@ -43,9 +45,14 @@ export function Header({ view, onViewChange }: Props) {
           Cheat sheet
           <span className="text-ink-3">{termCount}</span>
         </button>
+        <button type="button" className={BUTTON} onClick={() => setCardOpen(true)}>
+          <IdCard size={16} strokeWidth={1.5} />
+          Progress card
+        </button>
         <ThemeSwitch />
       </div>
       <CheatSheet open={cheatOpen} onClose={() => setCheatOpen(false)} />
+      <ProgressCardDialog open={cardOpen} onClose={() => setCardOpen(false)} />
     </header>
   )
 }
