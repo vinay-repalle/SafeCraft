@@ -6,7 +6,7 @@ import { GitButtons } from '../components/editor/GitButtons'
 import { Board } from '../components/jira/Board'
 import { ChatPanel } from '../components/jira/ChatPanel'
 import { PullRequestPanel } from '../components/pipeline/PullRequestPanel'
-import { StationList } from '../components/pipeline/StationList'
+import { Pipeline } from '../components/pipeline/Pipeline'
 import { MistakesReplay } from '../components/popups/MistakesReplay'
 import { RecapDialog } from '../components/popups/RecapDialog'
 import { SyncCheck } from '../components/popups/SyncCheck'
@@ -14,6 +14,7 @@ import { StepCard } from '../components/StepCard'
 import { PANEL } from '../components/ui'
 import { useLevelStore } from '../store/levelStore'
 import { useProgressStore } from '../store/progressStore'
+import { useEnsureLevel } from '../store/useEnsureLevel'
 import { ViewIntro } from './ViewIntro'
 
 type BottomTab = 'terminal' | 'pr'
@@ -24,14 +25,11 @@ export function MyView() {
   const role = useProgressStore((s) => s.settings.role)
   const completed = useProgressStore((s) => s.completed[1]?.frontend === true)
   const runner = useLevelStore((s) => s.runner)
-  const load = useLevelStore((s) => s.load)
   const prCount = useLevelStore((s) => s.snapshot?.pullRequests.length ?? 0)
   const [tab, setTab] = useState<BottomTab>('terminal')
 
   // Start Level 1 the first time My view opens. The run is kept when you switch tabs.
-  useEffect(() => {
-    if (!runner) load(1)
-  }, [runner, load])
+  useEnsureLevel()
 
   // Show the pull request page as soon as one exists.
   useEffect(() => {
@@ -56,7 +54,7 @@ export function MyView() {
   const level = runner?.level
 
   return (
-    <div className="grid h-full grid-cols-[minmax(300px,1fr)_minmax(480px,1.6fr)_minmax(260px,0.9fr)] gap-4">
+    <div className="grid h-full grid-cols-[minmax(280px,0.8fr)_minmax(480px,1.5fr)_minmax(340px,1fr)] gap-4">
       <h1 className="sr-only">My view</h1>
 
       <section aria-label="Board and chat" className={`${PANEL} p-4`}>
@@ -100,10 +98,12 @@ export function MyView() {
         </div>
       </section>
 
-      <section aria-label="Pipeline" className={`${PANEL} overflow-y-auto p-4`}>
+      <section aria-label="Pipeline" className={`${PANEL} p-4`}>
         <h2 className="text-body font-medium">Pipeline</h2>
         <p className="mb-3 mt-1 text-caption text-ink-2">Where your change is on its way to customers.</p>
-        <StationList />
+        <div className="min-h-0 flex-1">
+          <Pipeline withList />
+        </div>
       </section>
 
       <RecapDialog />

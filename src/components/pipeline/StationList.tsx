@@ -1,37 +1,23 @@
 import { Check, X } from 'lucide-react'
-import type { Station } from '../../engine/types'
-import { useLevelStore, type StationState } from '../../store/levelStore'
+import { STATIONS } from '../../engine/types'
+import { useLevelStore } from '../../store/levelStore'
+import { STATE_TEXT, STATION_INFO } from './stationInfo'
 
-const STATIONS: { id: Station; name: string; detail: string }[] = [
-  { id: 'client', name: 'Client', detail: 'Asks for the change' },
-  { id: 'pm', name: 'Project manager desk', detail: 'Writes the ticket' },
-  { id: 'dev', name: 'Developer desk', detail: 'Writes the code' },
-  { id: 'github', name: 'GitHub', detail: 'Holds the pull request' },
-  { id: 'tests', name: 'Test server', detail: 'Runs the automated tests' },
-  { id: 'live', name: 'Live app', detail: 'What customers use' },
-]
-
-const STATE_TEXT: Record<StationState, string> = {
-  idle: 'Waiting',
-  active: 'Work is here',
-  done: 'Handed on',
-  pass: 'Passed',
-  fail: 'Failed',
-}
-
-// A flat list of the pipeline stations, driven by the same events the 3D scene will use.
-// In Phase 4 this becomes the 2D fallback for devices that cannot run the 3D scene.
+// A flat list of the pipeline stations, driven by the same events as the 3D scene.
+// It is the 2D fallback for devices that cannot run the 3D scene, and the text that
+// screen readers get while the scene is showing.
 // Colours are flat and muted: green for passed, red for failed, no glow.
 export function StationList() {
   const stations = useLevelStore((s) => s.stations)
 
   return (
     <ol className="flex flex-col gap-2">
-      {STATIONS.map((station) => {
-        const state = stations[station.id]
+      {STATIONS.map((id) => {
+        const station = STATION_INFO[id]
+        const state = stations[id]
         return (
           <li
-            key={station.id}
+            key={id}
             aria-label={`${station.name}: ${STATE_TEXT[state]}`}
             className={`flex items-center gap-3 rounded-tag border p-3 transition-colors ${
               state === 'active' ? 'border-accent bg-raised' : 'border-line'

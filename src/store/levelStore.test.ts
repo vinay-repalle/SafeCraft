@@ -105,6 +105,27 @@ describe('levelStore', () => {
     expect(level().stations).toEqual({ client: 'done', pm: 'done', dev: 'done', github: 'pass', tests: 'pass', live: 'pass' })
   })
 
+  it('carries the package from station to station and ends at the live app', () => {
+    expect(level().packageAt).toBe('client')
+    const seen: string[] = []
+    for (let i = 0; i < 40 && !level().snapshot?.finished; i++) {
+      level().autoFill()
+      if (seen.at(-1) !== level().packageAt) seen.push(level().packageAt)
+    }
+    expect(seen).toEqual(['pm', 'dev', 'github', 'tests', 'live'])
+    expect(level().packageFrom).toBe('tests')
+  })
+
+  it('keeps a team feed that records who did what', () => {
+    level().act({ type: 'chat', chatId: 'intro', replyId: 'ack' })
+    for (let i = 0; i < 40 && !level().snapshot?.finished; i++) level().autoFill()
+    const feed = level().feed
+    expect(feed.some((f) => f.actor === 'qa' && f.text.startsWith('Tests passed'))).toBe(true)
+    expect(feed.some((f) => f.actor === 'reviewer' && f.text.startsWith('Approved'))).toBe(true)
+    expect(feed.some((f) => f.actor === 'pm' && f.text === 'Released to customers')).toBe(true)
+    expect(feed.some((f) => f.actor === 'frontend' && f.text.startsWith('Created branch'))).toBe(true)
+  })
+
   it('finishing the level opens the replay and saves progress', () => {
     expect(progress().completed[1]).toBeUndefined()
     for (let i = 0; i < 40 && !level().snapshot?.finished; i++) level().autoFill()
@@ -119,6 +140,8 @@ describe('levelStore', () => {
     expect(level().snapshot?.currentStepId).toBe('read-ticket-message')
     expect(level().terminal).toEqual([])
     expect(level().chat).toHaveLength(1)
+    expect(level().feed).toEqual([])
+    expect(level().packageAt).toBe('client')
     expect(progress().completed[1]).toEqual({ frontend: true }) // progress is kept
   })
 

@@ -11,6 +11,7 @@ import { LevelRunner, type RunnerSnapshot } from '../engine/levelRunner'
 import { GitSim } from '../engine/gitSim'
 import { STATIONS, type Action, type ActionResult, type Station, type Step } from '../engine/types'
 import { useProgressStore } from './progressStore'
+import { describeEvent, type FeedItem } from './teamFeed'
 
 export type StationState = 'idle' | 'active' | 'done' | 'pass' | 'fail'
 export type ChatLine = { id: number; speaker: string; side: 'them' | 'you'; text: string }
@@ -27,6 +28,11 @@ type LevelState = {
   chat: ChatLine[]
   terminal: TerminalLine[]
   stations: Record<Station, StationState>
+  // Where the work package is, and where it came from (so the 3D scene can carry it across).
+  packageAt: Station
+  packageFrom: Station | null
+  // What each role did, newest last. Team view reads this.
+  feed: FeedItem[]
   popup: Popup | null
   // A gentle warning or error from the last action, shown on the step card.
   notice: string | null
@@ -41,6 +47,8 @@ type LevelState = {
   closePopup: () => void
   restart: () => void
 }
+
+const FEED_LIMIT = 40
 
 const idleStations = (): Record<Station, StationState> =>
   Object.fromEntries(STATIONS.map((s) => [s, 'idle'])) as Record<Station, StationState>
@@ -67,6 +75,11 @@ export const useLevelStore = create<LevelState>()((set, get) => {
   }
 
   const handleEvent = (runner: LevelRunner) => (event: Parameters<Parameters<LevelRunner['events']['on']>[0]>[0]) => {
+    // Team view: whoever owns the current step is the one acting when this event fires.
+    const actor = runner.currentStep()?.role ?? 'frontend'
+    const line = describeEvent(event, actor)
+    if (line) set((s) => ({ feed: [...s.feed, { ...line, id: nextId() }].slice(-FEED_LIMIT) }))
+
     switch (event.type) {
       case 'step:active': {
         const chat = runner.level.steps[event.index].chat
@@ -93,7 +106,9 @@ export const useLevelStore = create<LevelState>()((set, get) => {
           // The package has moved on: the station it left is "done" unless it already passed or failed.
           if (packageFrom && (stations[packageFrom] === 'active' || stations[packageFrom] === 'idle')) stations[packageFrom] = 'done'
           stations[station] = status
-          return { stations }
+          // The package only travels when the event names where it came from. Otherwise it stays put
+          // and the station just changes colour (for example the review passing at GitHub).
+          return packageFrom ? { stations, packageFrom: s.packageAt, packageAt: station } : { stations }
         })
         break
       }
@@ -124,6 +139,9 @@ export const useLevelStore = create<LevelState>()((set, get) => {
     chat: [],
     terminal: [],
     stations: idleStations(),
+    packageAt: 'client',
+    packageFrom: null,
+    feed: [],
     popup: null,
     notice: null,
 
@@ -139,6 +157,9 @@ export const useLevelStore = create<LevelState>()((set, get) => {
         chat: [],
         terminal: [],
         stations: idleStations(),
+        packageAt: 'client',
+        packageFrom: null,
+        feed: [],
         popup: options?.skipRecap ? null : { type: 'recap' },
         notice: null,
       })
