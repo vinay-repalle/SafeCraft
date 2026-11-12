@@ -1,0 +1,504 @@
+{
+  "id": 5,
+  "perspective": "backend",
+  "title": "Sudden requirement change",
+  "whyItExists": "Plans change after work has started. When they do, you talk first, then update the ticket, the contract and the code together, so nobody builds on an old plan.",
+  "recap": "Midway through a project the client changes a requirement. The project manager updates the ticket, and everyone who depends on it checks what changes: the API contract, the endpoint, the screen. You agree the new shape with your teammate before you touch the code, then ship the change together.",
+  "scenario": {
+    "app": "Bowlful, a food ordering app",
+    "ticket": {
+      "id": "ORD-23",
+      "title": "Show the delivery estimate in minutes",
+      "description": "Show the delivery estimate as one number of minutes on the order status screen.",
+      "status": "todo",
+      "assignee": "backend",
+      "type": "story"
+    },
+    "otherTickets": [
+      {
+        "id": "ORD-9",
+        "title": "Add a vegetarian filter to the menu list",
+        "description": "Let customers hide dishes that contain meat or fish.",
+        "status": "done",
+        "assignee": "frontend",
+        "type": "story"
+      },
+      {
+        "id": "ORD-12",
+        "title": "Cart total ignores the delivery fee after removing an item",
+        "description": "Add two dishes, remove one, and the delivery fee disappears from the total.",
+        "status": "todo",
+        "assignee": "backend",
+        "type": "bug"
+      },
+      {
+        "id": "ORD-15",
+        "title": "Send an order confirmation email",
+        "description": "Email the customer a summary once the restaurant accepts the order.",
+        "status": "todo",
+        "assignee": null,
+        "type": "task"
+      },
+      {
+        "id": "ORD-31",
+        "title": "Show the estimated delivery time on the order status screen",
+        "description": "Customers ask where their food is.",
+        "status": "inprogress",
+        "assignee": "frontend",
+        "type": "story"
+      }
+    ],
+    "files": [
+      {
+        "path": "src/api/orders.contract.json",
+        "content": "{\n  \"endpoint\": \"GET /api/orders/:id\",\n  \"response\": {\n    \"id\": \"string\",\n    \"status\": \"string\",\n    \"estimatedMinutes\": \"number\"\n  }\n}\n"
+      },
+      {
+        "path": "src/components/DeliveryEstimate.jsx",
+        "content": "export function DeliveryEstimate({ order }) {\n  return <p>Arrives in {order.estimatedMinutes} min</p>\n}\n"
+      },
+      {
+        "path": "src/api/orders.js",
+        "content": "export function getOrder(id) {\n  return { id, status: 'preparing', estimatedMinutes: 30 }\n}\n"
+      }
+    ]
+  },
+  "tests": [
+    {
+      "id": "contract-min",
+      "name": "The contract lists estimatedMinutesMin as a number",
+      "rule": {
+        "type": "includes",
+        "path": "src/api/orders.contract.json",
+        "text": "\"estimatedMinutesMin\": \"number\""
+      }
+    },
+    {
+      "id": "contract-max",
+      "name": "The contract lists estimatedMinutesMax as a number",
+      "rule": {
+        "type": "includes",
+        "path": "src/api/orders.contract.json",
+        "text": "\"estimatedMinutesMax\": \"number\""
+      }
+    },
+    {
+      "id": "contract-old",
+      "name": "The old estimatedMinutes field is gone from the contract",
+      "rule": {
+        "type": "excludes",
+        "path": "src/api/orders.contract.json",
+        "text": "\"estimatedMinutes\""
+      }
+    },
+    {
+      "id": "api-min",
+      "name": "The endpoint returns estimatedMinutesMin",
+      "rule": {
+        "type": "includes",
+        "path": "src/api/orders.js",
+        "text": "estimatedMinutesMin: 25"
+      }
+    },
+    {
+      "id": "api-max",
+      "name": "The endpoint returns estimatedMinutesMax",
+      "rule": {
+        "type": "includes",
+        "path": "src/api/orders.js",
+        "text": "estimatedMinutesMax: 35"
+      }
+    },
+    {
+      "id": "api-old",
+      "name": "The endpoint no longer returns the old field",
+      "rule": {
+        "type": "excludes",
+        "path": "src/api/orders.js",
+        "text": "estimatedMinutes:"
+      }
+    },
+    {
+      "id": "api-exported",
+      "name": "getOrder is still exported",
+      "rule": {
+        "type": "includes",
+        "path": "src/api/orders.js",
+        "text": "export function getOrder"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "id": "read-change",
+      "role": "backend",
+      "kind": "chat",
+      "prompt": "Priya, the project manager, has a change to a ticket you are about to start. Read her message and choose a reply.",
+      "chat": {
+        "id": "change",
+        "from": {
+          "name": "Priya Nair",
+          "role": "pm"
+        },
+        "message": "Update on ORD-23: the client wants the delivery estimate shown as a range, such as 25 to 35 min, not one number. I have updated the ticket. This changes what the order endpoint returns as well.",
+        "replies": [
+          {
+            "id": "check-contract",
+            "text": "Understood. I'll agree the new response with Aisha before I change anything.",
+            "response": "Good. Talk to Aisha first, then update the ticket's code and the contract together."
+          },
+          {
+            "id": "just-change",
+            "text": "Fine. I'll change my side now and sort out the other side later.",
+            "response": "Please talk to Aisha first. If the two sides expect different fields, the estimate disappears for customers.",
+            "mistake": "unagreed-contract"
+          },
+          {
+            "id": "later",
+            "text": "Can this wait until the next release?",
+            "response": "The client wants it in this release, so it cannot wait. Check the contract with Aisha first, then make the change."
+          }
+        ]
+      },
+      "check": {
+        "type": "chatDone",
+        "chatId": "change"
+      },
+      "autoFill": "check-contract",
+      "terms": [
+        "ticket"
+      ],
+      "stationEvent": {
+        "station": "pm",
+        "status": "active",
+        "packageFrom": "client"
+      },
+      "after": {
+        "ticketUpdate": {
+          "ticketId": "ORD-23",
+          "title": "Show the delivery estimate as a range",
+          "description": "Changed by Priya: the client wants a range such as 25 to 35 min, because one number looked like a promise. The orders endpoint and the API contract change too."
+        }
+      }
+    },
+    {
+      "id": "agree-new-shape",
+      "role": "backend",
+      "kind": "chat",
+      "prompt": "Aisha is the frontend developer on this feature. Agree the new response with them.",
+      "chat": {
+        "id": "new-shape",
+        "from": {
+          "name": "Aisha Khan",
+          "role": "frontend"
+        },
+        "message": "Priya told me about the range. What should the order response look like now?",
+        "replies": [
+          {
+            "id": "two-numbers",
+            "text": "Two numbers: estimatedMinutesMin and estimatedMinutesMax.",
+            "response": "Agreed. Two numbers are easy to check and to format. We both update the contract file and then our own code."
+          },
+          {
+            "id": "one-text",
+            "text": "One text field, like '25-35 min'.",
+            "response": "A text field cannot be checked by tests, and the screen would depend on my formatting. Two numbers are safer. Let us use estimatedMinutesMin and estimatedMinutesMax."
+          },
+          {
+            "id": "keep-old",
+            "text": "Keep estimatedMinutes and add a range next to it.",
+            "response": "That keeps old screens working while you switch over. For this release two numbers are simpler. Let us use estimatedMinutesMin and estimatedMinutesMax, and remove the old field."
+          }
+        ]
+      },
+      "check": {
+        "type": "chatDone",
+        "chatId": "new-shape"
+      },
+      "autoFill": "two-numbers",
+      "terms": [
+        "api-contract"
+      ]
+    },
+    {
+      "id": "sync-start",
+      "role": "backend",
+      "kind": "syncCheck",
+      "prompt": "Pull the latest main before you start. Type the command below.",
+      "hint": "The command is git pull origin main. It brings in everything your teammates added since you last pulled.",
+      "check": {
+        "type": "syncResolved",
+        "phase": "start"
+      },
+      "autoFill": "git pull origin main",
+      "terms": [
+        "pull",
+        "remote-origin"
+      ]
+    },
+    {
+      "id": "start-ticket",
+      "role": "backend",
+      "kind": "board",
+      "prompt": "Move ORD-23 from To do to In progress, so the team can see you have picked it up.",
+      "hint": "Drag the ORD-23 card to the In progress column.",
+      "check": {
+        "type": "ticketStatus",
+        "ticketId": "ORD-23",
+        "status": "inprogress"
+      },
+      "autoFill": "inprogress",
+      "terms": [
+        "ticket",
+        "jira-board"
+      ],
+      "stationEvent": {
+        "station": "dev",
+        "status": "active",
+        "packageFrom": "pm"
+      }
+    },
+    {
+      "id": "create-branch",
+      "role": "backend",
+      "kind": "git",
+      "prompt": "Create your own branch for this ticket. Put the ticket number in the name, for example feature/ORD-23-delivery-range.",
+      "hint": "The command is git checkout -b followed by the branch name. A good name starts with feature/ or fix/ and includes ORD-23.",
+      "check": {
+        "type": "branchNamed",
+        "pattern": "^(feature|fix|chore)/ord-23-[a-z0-9]+(-[a-z0-9]+)*$",
+        "flags": "i"
+      },
+      "autoFill": "git checkout -b feature/ORD-23-delivery-range",
+      "terms": [
+        "branch"
+      ]
+    },
+    {
+      "id": "update-contract",
+      "role": "backend",
+      "kind": "code",
+      "prompt": "Update the contract you agreed. In src/api/orders.contract.json, replace estimatedMinutes with estimatedMinutesMin and estimatedMinutesMax, both numbers.",
+      "check": {
+        "type": "fileContains",
+        "path": "src/api/orders.contract.json",
+        "includes": "\"estimatedMinutesMax\": \"number\"",
+        "excludes": "\"estimatedMinutes\""
+      },
+      "autoFill": "{\n  \"endpoint\": \"GET /api/orders/:id\",\n  \"response\": {\n    \"id\": \"string\",\n    \"status\": \"string\",\n    \"estimatedMinutesMin\": \"number\",\n    \"estimatedMinutesMax\": \"number\"\n  }\n}\n",
+      "hint": "Replace the estimatedMinutes line with two lines, estimatedMinutesMin and estimatedMinutesMax, each with the type \"number\". Separate them with a comma.",
+      "terms": [
+        "api-contract"
+      ],
+      "after": {
+        "remoteCommit": {
+          "author": "Aisha Khan",
+          "role": "frontend",
+          "branch": "main",
+          "message": "Show the delivery estimate as a range",
+          "changes": {
+            "src/components/DeliveryEstimate.jsx": "export function DeliveryEstimate({ order }) {\n  return <p>Arrives in {order.estimatedMinutesMin} to {order.estimatedMinutesMax} min</p>\n}\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "update-endpoint",
+      "role": "backend",
+      "kind": "code",
+      "prompt": "In src/api/orders.js, make getOrder return the range: estimatedMinutesMin 25 and estimatedMinutesMax 35, instead of estimatedMinutes.",
+      "check": {
+        "type": "fileContains",
+        "path": "src/api/orders.js",
+        "includes": "estimatedMinutesMax: 35",
+        "excludes": "estimatedMinutes:"
+      },
+      "autoFill": "export function getOrder(id) {\n  return { id, status: 'preparing', estimatedMinutesMin: 25, estimatedMinutesMax: 35 }\n}\n",
+      "hint": "Replace estimatedMinutes: 30 with estimatedMinutesMin: 25, estimatedMinutesMax: 35.",
+      "terms": [
+        "endpoint"
+      ]
+    },
+    {
+      "id": "commit-change",
+      "role": "backend",
+      "kind": "git",
+      "prompt": "Save your change as a commit, with a message that says what changed.",
+      "hint": "Run git add . and then git commit -m followed by a message in quotes, for example \"ORD-23 Return delivery estimate as a range\".",
+      "check": {
+        "type": "branchHasCommit"
+      },
+      "autoFill": "git add .\ngit commit -m \"ORD-23 Return delivery estimate as a range\"",
+      "terms": [
+        "commit"
+      ]
+    },
+    {
+      "id": "sync-push",
+      "role": "backend",
+      "kind": "syncCheck",
+      "prompt": "Pull again before you push, in case a teammate changed something while you worked.",
+      "hint": "The command is git pull origin main.",
+      "check": {
+        "type": "syncResolved",
+        "phase": "push"
+      },
+      "autoFill": "git pull origin main",
+      "terms": [
+        "pull"
+      ]
+    },
+    {
+      "id": "push-branch",
+      "role": "backend",
+      "kind": "git",
+      "prompt": "Push your branch to GitHub so the team can see it.",
+      "hint": "The command is git push -u origin followed by your branch name.",
+      "check": {
+        "type": "pushed"
+      },
+      "autoFill": "git push -u origin {branch}",
+      "terms": [
+        "push",
+        "remote-origin"
+      ],
+      "stationEvent": {
+        "station": "github",
+        "status": "active",
+        "packageFrom": "dev"
+      }
+    },
+    {
+      "id": "raise-pr",
+      "role": "backend",
+      "kind": "pr",
+      "prompt": "Raise a pull request asking your teammates to review your branch.",
+      "hint": "Give it a title that matches the ticket.",
+      "check": {
+        "type": "prRaised"
+      },
+      "autoFill": "ORD-23 Return delivery estimate as a range",
+      "terms": [
+        "pull-request"
+      ]
+    },
+    {
+      "id": "run-tests",
+      "role": "qa",
+      "kind": "tests",
+      "prompt": "Automated tests run on your pull request. Watch the result.",
+      "auto": {
+        "type": "runTests"
+      },
+      "check": {
+        "type": "testsPassed"
+      },
+      "terms": [
+        "automated-tests"
+      ]
+    },
+    {
+      "id": "review",
+      "role": "reviewer",
+      "kind": "review",
+      "prompt": "A teammate reads the change and approves it.",
+      "auto": {
+        "type": "approvePr"
+      },
+      "check": {
+        "type": "prApproved"
+      },
+      "terms": [
+        "code-review"
+      ],
+      "stationEvent": {
+        "station": "github",
+        "status": "pass"
+      }
+    },
+    {
+      "id": "merge-pr",
+      "role": "backend",
+      "kind": "pr",
+      "prompt": "Tests passed and the change is approved. Merge the pull request into main.",
+      "check": {
+        "type": "prMerged"
+      },
+      "autoFill": "merge",
+      "terms": [
+        "merge"
+      ],
+      "stationEvent": {
+        "station": "live",
+        "status": "active",
+        "packageFrom": "tests"
+      }
+    },
+    {
+      "id": "release",
+      "role": "pm",
+      "kind": "deploy",
+      "prompt": "The merged change is released to the live app.",
+      "auto": {
+        "type": "deploy"
+      },
+      "check": {
+        "type": "deployed"
+      },
+      "terms": [
+        "deploy"
+      ],
+      "stationEvent": {
+        "station": "live",
+        "status": "pass"
+      }
+    }
+  ],
+  "replay": [
+    {
+      "mistake": "skipped-start-pull",
+      "you": "You started work without pulling the latest main.",
+      "result": "On a real team your branch would miss Aisha's change (the other half of the delivery estimate). Your pull request would show as out of date, and the gap grows with every hour you wait."
+    },
+    {
+      "mistake": "branch-behind-main",
+      "you": "You created your branch from an out-of-date copy of main.",
+      "result": "Your work starts from old code. Reviewers see a branch that does not match main, and merging it gets harder the longer it stays that way."
+    },
+    {
+      "mistake": "unclear-branch-name",
+      "you": "You named your branch something that does not point to the ticket.",
+      "result": "Teammates cannot tell what the branch is for, and nobody can find it from ORD-23."
+    },
+    {
+      "mistake": "committed-on-main",
+      "you": "You committed your change directly on main.",
+      "result": "Your change would skip review. Anyone who pulls main would get half-finished work."
+    },
+    {
+      "mistake": "vague-commit-message",
+      "you": "You wrote a commit message that does not say what changed.",
+      "result": "Months later nobody can tell why that line changed without opening the code, and searching the history finds nothing."
+    },
+    {
+      "mistake": "skipped-prepush-pull",
+      "you": "You pushed without pulling first.",
+      "result": "If a teammate had pushed to the same branch in the meantime, Git would have rejected your push and you would have had to untangle it afterwards."
+    },
+    {
+      "mistake": "pushed-to-main",
+      "you": "You pushed straight to main.",
+      "result": "The live app would be built from code that nobody reviewed and no test ran on, so a typo could break the app for every customer."
+    },
+    {
+      "mistake": "pr-out-of-date",
+      "you": "You raised a pull request from an out-of-date branch.",
+      "result": "GitHub would show \"This branch is out-of-date with the base branch\", and your reviewer would wait for you to update it before they could trust the result."
+    },
+    {
+      "mistake": "unagreed-contract",
+      "you": "You changed your side before agreeing the new response shape with your teammate.",
+      "result": "The screen would expect two numbers while the endpoint still sent one. The estimate would disappear for customers, and the gap would only show up after release."
+    }
+  ]
+}

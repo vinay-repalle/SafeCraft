@@ -62,6 +62,7 @@ export function PullRequestPanel() {
             tone={pr.outOfDate ? 'bad' : 'good'}
           />
         )}
+        {!merged && !pr.mergeable && <Row name="Conflicts" value="Must be resolved before merging" tone="bad" />}
         {snapshot.deployed && <Row name="Release" value="Live" tone="good" />}
       </dl>
 

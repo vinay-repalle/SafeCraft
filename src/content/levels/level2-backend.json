@@ -1,0 +1,433 @@
+{
+  "id": 2,
+  "perspective": "backend",
+  "title": "API contract handshake",
+  "whyItExists": "When two people build the two halves of a feature at the same time, they agree on what passes between them first, so neither waits for the other.",
+  "recap": "The frontend asks the backend for data and the backend answers. An API contract is the written agreement on that request and answer. With it, the frontend builds against mock data while the backend builds the real endpoint.",
+  "scenario": {
+    "app": "Bowlful, a food ordering app",
+    "ticket": {
+      "id": "ORD-11",
+      "title": "Return an estimated delivery time with each order",
+      "description": "The orders endpoint should include an estimate in minutes. The frontend ticket is ORD-31.",
+      "status": "todo",
+      "assignee": "backend",
+      "type": "story"
+    },
+    "otherTickets": [
+      {
+        "id": "ORD-9",
+        "title": "Add a vegetarian filter to the menu list",
+        "description": "Let customers hide dishes that contain meat or fish.",
+        "status": "done",
+        "assignee": "frontend",
+        "type": "story"
+      },
+      {
+        "id": "ORD-31",
+        "title": "Show the estimated delivery time on the order status screen",
+        "description": "Customers ask where their food is. Show how many minutes until it arrives.",
+        "status": "inprogress",
+        "assignee": "frontend",
+        "type": "story"
+      },
+      {
+        "id": "ORD-12",
+        "title": "Cart total ignores the delivery fee after removing an item",
+        "description": "Add two dishes, remove one, and the delivery fee disappears from the total.",
+        "status": "todo",
+        "assignee": "backend",
+        "type": "bug"
+      },
+      {
+        "id": "ORD-15",
+        "title": "Send an order confirmation email",
+        "description": "Email the customer a summary once the restaurant accepts the order.",
+        "status": "todo",
+        "assignee": null,
+        "type": "task"
+      }
+    ],
+    "files": [
+      {
+        "path": "docs/orders-contract.json",
+        "content": "{\n  \"endpoint\": \"GET /api/orders/:id\",\n  \"response\": {\n    \"id\": \"string\",\n    \"status\": \"string\"\n  }\n}\n"
+      },
+      {
+        "path": "src/mocks/order.mock.json",
+        "content": "{\n  \"id\": \"ord_1042\",\n  \"status\": \"preparing\"\n}\n"
+      },
+      {
+        "path": "src/components/OrderStatus.jsx",
+        "content": "export function OrderStatus({ order }) {\n  return (\n    <section className=\"order-status\">\n      <h2>Order {order.id}</h2>\n      <p>Status: {order.status}</p>\n    </section>\n  )\n}\n"
+      },
+      {
+        "path": "src/api/orders.js",
+        "content": "export function getOrder(id) {\n  return { id, status: 'preparing' }\n}\n"
+      }
+    ]
+  },
+  "tests": [
+    {
+      "id": "contract-field",
+      "name": "The contract lists estimatedMinutes as a number",
+      "rule": {
+        "type": "includes",
+        "path": "docs/orders-contract.json",
+        "text": "\"estimatedMinutes\": \"number\""
+      }
+    },
+    {
+      "id": "endpoint-field",
+      "name": "The endpoint returns estimatedMinutes",
+      "rule": {
+        "type": "includes",
+        "path": "src/api/orders.js",
+        "text": "estimatedMinutes: 25"
+      }
+    },
+    {
+      "id": "endpoint-exported",
+      "name": "getOrder is still exported",
+      "rule": {
+        "type": "includes",
+        "path": "src/api/orders.js",
+        "text": "export function getOrder"
+      }
+    },
+    {
+      "id": "ui-exists",
+      "name": "The OrderStatus component still exists",
+      "rule": {
+        "type": "fileExists",
+        "path": "src/components/OrderStatus.jsx"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "id": "agree-contract",
+      "role": "backend",
+      "kind": "chat",
+      "prompt": "Aisha, the frontend developer, is building the order status screen. Agree with her what the endpoint will return.",
+      "chat": {
+        "id": "contract-talk",
+        "from": {
+          "name": "Aisha Khan",
+          "role": "frontend"
+        },
+        "message": "I'm building the order status screen for ORD-31 and I need the delivery time. What will the order endpoint return?",
+        "replies": [
+          {
+            "id": "number",
+            "text": "A field called estimatedMinutes, as a number of minutes.",
+            "response": "Agreed. I'll build the screen against that, using mock data until your endpoint is merged. Let's both write it into the contract file."
+          },
+          {
+            "id": "text",
+            "text": "A text like '25 mins'.",
+            "response": "Text is harder to sort or add up, and the format can drift. A number of minutes is safer. Let's use estimatedMinutes as a number."
+          },
+          {
+            "id": "whatever",
+            "text": "Build what you like. I'll make the endpoint match later.",
+            "response": "That works for me, but I would be guessing. If I guess text and you send a number, my screen breaks. Let's agree on estimatedMinutes as a number.",
+            "mistake": "unagreed-contract"
+          }
+        ]
+      },
+      "check": {
+        "type": "chatDone",
+        "chatId": "contract-talk"
+      },
+      "autoFill": "number",
+      "terms": [
+        "api-contract"
+      ],
+      "stationEvent": {
+        "station": "pm",
+        "status": "active",
+        "packageFrom": "client"
+      }
+    },
+    {
+      "id": "sync-start",
+      "role": "backend",
+      "kind": "syncCheck",
+      "prompt": "Pull the latest main before you start. Type the command below.",
+      "hint": "The command is git pull origin main. It brings in everything your teammates added since you last pulled.",
+      "check": {
+        "type": "syncResolved",
+        "phase": "start"
+      },
+      "autoFill": "git pull origin main",
+      "terms": [
+        "pull",
+        "remote-origin"
+      ]
+    },
+    {
+      "id": "start-ticket",
+      "role": "backend",
+      "kind": "board",
+      "prompt": "Move ORD-11 from To do to In progress, so the team can see you have picked it up.",
+      "hint": "Drag the ORD-11 card to the In progress column.",
+      "check": {
+        "type": "ticketStatus",
+        "ticketId": "ORD-11",
+        "status": "inprogress"
+      },
+      "autoFill": "inprogress",
+      "terms": [
+        "ticket",
+        "jira-board"
+      ],
+      "stationEvent": {
+        "station": "dev",
+        "status": "active",
+        "packageFrom": "pm"
+      }
+    },
+    {
+      "id": "create-branch",
+      "role": "backend",
+      "kind": "git",
+      "prompt": "Create your own branch for this ticket. Put the ticket number in the name, for example feature/ORD-11-delivery-estimate.",
+      "hint": "The command is git checkout -b followed by the branch name. A good name starts with feature/ or fix/ and includes ORD-11.",
+      "check": {
+        "type": "branchNamed",
+        "pattern": "^(feature|fix|chore)/ord-11-[a-z0-9]+(-[a-z0-9]+)*$",
+        "flags": "i"
+      },
+      "autoFill": "git checkout -b feature/ORD-11-delivery-estimate",
+      "terms": [
+        "branch"
+      ]
+    },
+    {
+      "id": "write-contract",
+      "role": "backend",
+      "kind": "code",
+      "prompt": "Write the agreement down. In docs/orders-contract.json, add estimatedMinutes to the response as a number.",
+      "check": {
+        "type": "fileContains",
+        "path": "docs/orders-contract.json",
+        "includes": "\"estimatedMinutes\": \"number\""
+      },
+      "autoFill": "{\n  \"endpoint\": \"GET /api/orders/:id\",\n  \"response\": {\n    \"id\": \"string\",\n    \"status\": \"string\",\n    \"estimatedMinutes\": \"number\"\n  }\n}\n",
+      "hint": "Add a comma after the status line, then a new line: \"estimatedMinutes\": \"number\". The word number is in quotes, because the contract describes the type.",
+      "terms": [
+        "api-contract"
+      ],
+      "after": {
+        "remoteCommit": {
+          "author": "Aisha Khan",
+          "role": "frontend",
+          "branch": "main",
+          "message": "Show estimated delivery time on the order status screen",
+          "changes": {
+            "src/components/OrderStatus.jsx": "export function OrderStatus({ order }) {\n  return (\n    <section className=\"order-status\">\n      <h2>Order {order.id}</h2>\n      <p>Status: {order.status}</p>\n      <p>Arrives in {order.estimatedMinutes} min</p>\n    </section>\n  )\n}\n",
+            "src/mocks/order.mock.json": "{\n  \"id\": \"ord_1042\",\n  \"status\": \"preparing\",\n  \"estimatedMinutes\": 25\n}\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "build-endpoint",
+      "role": "backend",
+      "kind": "code",
+      "prompt": "In src/api/orders.js, make getOrder return estimatedMinutes with the value 25, as the contract says. This is the endpoint the screen will call.",
+      "check": {
+        "type": "fileContains",
+        "path": "src/api/orders.js",
+        "includes": "estimatedMinutes: 25"
+      },
+      "autoFill": "export function getOrder(id) {\n  return { id, status: 'preparing', estimatedMinutes: 25 }\n}\n",
+      "hint": "Add , estimatedMinutes: 25 inside the braces after status: 'preparing'.",
+      "terms": [
+        "endpoint"
+      ]
+    },
+    {
+      "id": "commit-change",
+      "role": "backend",
+      "kind": "git",
+      "prompt": "Save your change as a commit, with a message that says what changed.",
+      "hint": "Run git add . and then git commit -m followed by a message in quotes, for example \"ORD-11 Return estimated delivery time\".",
+      "check": {
+        "type": "branchHasCommit"
+      },
+      "autoFill": "git add .\ngit commit -m \"ORD-11 Return estimated delivery time\"",
+      "terms": [
+        "commit"
+      ]
+    },
+    {
+      "id": "sync-push",
+      "role": "backend",
+      "kind": "syncCheck",
+      "prompt": "Pull again before you push, in case a teammate changed something while you worked.",
+      "hint": "The command is git pull origin main.",
+      "check": {
+        "type": "syncResolved",
+        "phase": "push"
+      },
+      "autoFill": "git pull origin main",
+      "terms": [
+        "pull"
+      ]
+    },
+    {
+      "id": "push-branch",
+      "role": "backend",
+      "kind": "git",
+      "prompt": "Push your branch to GitHub so the team can see it.",
+      "hint": "The command is git push -u origin followed by your branch name.",
+      "check": {
+        "type": "pushed"
+      },
+      "autoFill": "git push -u origin {branch}",
+      "terms": [
+        "push",
+        "remote-origin"
+      ],
+      "stationEvent": {
+        "station": "github",
+        "status": "active",
+        "packageFrom": "dev"
+      }
+    },
+    {
+      "id": "raise-pr",
+      "role": "backend",
+      "kind": "pr",
+      "prompt": "Raise a pull request asking your teammates to review your branch.",
+      "hint": "Give it a title that matches the ticket.",
+      "check": {
+        "type": "prRaised"
+      },
+      "autoFill": "ORD-11 Return estimated delivery time",
+      "terms": [
+        "pull-request"
+      ]
+    },
+    {
+      "id": "run-tests",
+      "role": "qa",
+      "kind": "tests",
+      "prompt": "Automated tests run on your pull request. Watch the result.",
+      "auto": {
+        "type": "runTests"
+      },
+      "check": {
+        "type": "testsPassed"
+      },
+      "terms": [
+        "automated-tests"
+      ]
+    },
+    {
+      "id": "review",
+      "role": "reviewer",
+      "kind": "review",
+      "prompt": "A teammate reads the change and approves it.",
+      "auto": {
+        "type": "approvePr"
+      },
+      "check": {
+        "type": "prApproved"
+      },
+      "terms": [
+        "code-review"
+      ],
+      "stationEvent": {
+        "station": "github",
+        "status": "pass"
+      }
+    },
+    {
+      "id": "merge-pr",
+      "role": "backend",
+      "kind": "pr",
+      "prompt": "Tests passed and the change is approved. Merge the pull request into main.",
+      "check": {
+        "type": "prMerged"
+      },
+      "autoFill": "merge",
+      "terms": [
+        "merge"
+      ],
+      "stationEvent": {
+        "station": "live",
+        "status": "active",
+        "packageFrom": "tests"
+      }
+    },
+    {
+      "id": "release",
+      "role": "pm",
+      "kind": "deploy",
+      "prompt": "The merged change is released to the live app.",
+      "auto": {
+        "type": "deploy"
+      },
+      "check": {
+        "type": "deployed"
+      },
+      "terms": [
+        "deploy"
+      ],
+      "stationEvent": {
+        "station": "live",
+        "status": "pass"
+      }
+    }
+  ],
+  "replay": [
+    {
+      "mistake": "skipped-start-pull",
+      "you": "You started work without pulling the latest main.",
+      "result": "On a real team your branch would miss Aisha's change (the order status screen). Your pull request would show as out of date, and the gap grows with every hour you wait."
+    },
+    {
+      "mistake": "branch-behind-main",
+      "you": "You created your branch from an out-of-date copy of main.",
+      "result": "Your work starts from old code. Reviewers see a branch that does not match main, and merging it gets harder the longer it stays that way."
+    },
+    {
+      "mistake": "unclear-branch-name",
+      "you": "You named your branch something that does not point to the ticket.",
+      "result": "Teammates cannot tell what the branch is for, and nobody can find it from ORD-11."
+    },
+    {
+      "mistake": "committed-on-main",
+      "you": "You committed your change directly on main.",
+      "result": "Your change would skip review. Anyone who pulls main would get half-finished work."
+    },
+    {
+      "mistake": "vague-commit-message",
+      "you": "You wrote a commit message that does not say what changed.",
+      "result": "Months later nobody can tell why that line changed without opening the code, and searching the history finds nothing."
+    },
+    {
+      "mistake": "skipped-prepush-pull",
+      "you": "You pushed without pulling first.",
+      "result": "If a teammate had pushed to the same branch in the meantime, Git would have rejected your push and you would have had to untangle it afterwards."
+    },
+    {
+      "mistake": "pushed-to-main",
+      "you": "You pushed straight to main.",
+      "result": "The live app would be built from code that nobody reviewed and no test ran on, so a typo could break the app for every customer."
+    },
+    {
+      "mistake": "pr-out-of-date",
+      "you": "You raised a pull request from an out-of-date branch.",
+      "result": "GitHub would show \"This branch is out-of-date with the base branch\", and your reviewer would wait for you to update it before they could trust the result."
+    },
+    {
+      "mistake": "unagreed-contract",
+      "you": "You told your teammate to send whatever was easiest, without agreeing on the shape of the data.",
+      "result": "The backend might send the delivery time as text such as \"25 mins\" while the screen expects a number. You would only find out when the two halves are joined, usually the day before release."
+    }
+  ]
+}

@@ -230,6 +230,7 @@ export class LevelRunner {
     if (this.chatReplies.has(chatId)) return { ok: false, message: 'You already answered this message.' }
     this.chatReplies.set(chatId, replyId)
     this.emit({ type: 'chat:reply', chatId, replyId, response: reply.response })
+    if (reply.mistake) this.recordMistake(reply.mistake)
     return { ok: true, message: reply.response }
   }
 
@@ -304,12 +305,25 @@ export class LevelRunner {
     this.completed.push(step.id)
     this.emit({ type: 'step:complete', stepId: step.id, index: this.stepIndex, autoFilled: this.autoFilled.has(step.id) })
     if (step.stationEvent) this.emit({ type: 'pipeline', event: step.stationEvent })
+    if (step.after) this.runAfter(step.after)
     this.stepIndex++
     if (this.stepIndex >= this.level.steps.length) {
       this.finished = true
       this.emit({ type: 'level:complete', levelId: this.level.id })
     } else {
       this.announceStep()
+    }
+  }
+
+  // A teammate pushes, or the project manager edits a ticket, while the learner is mid-level.
+  private runAfter(after: NonNullable<Step['after']>): void {
+    if (after.remoteCommit) {
+      const c = after.remoteCommit
+      this.git.pushTeammateCommit(c.branch, c.changes, c.message, c.author)
+    }
+    if (after.ticketUpdate) {
+      const { ticketId, ...patch } = after.ticketUpdate
+      this.jira.update(ticketId, patch)
     }
   }
 
@@ -380,6 +394,12 @@ export class LevelRunner {
         return this.deployed
       case 'chatDone':
         return this.chatReplies.has(check.chatId)
+      case 'testsRan':
+        return this.lastReport !== null
+      case 'conflict':
+        return this.git.conflictedFiles().length > 0
+      case 'conflictResolved':
+        return !this.git.isMerging()
     }
   }
 
@@ -400,6 +420,7 @@ export class LevelRunner {
       case 'git:commit':
         if (event.branch === 'main') this.recordMistake('committed-on-main')
         if (isVagueCommitMessage(event.message)) this.recordMistake('vague-commit-message')
+        if (Object.values(this.git.getCommit(event.commitId)?.files ?? {}).some((text) => text.includes('<<<<<<<'))) this.recordMistake('committed-conflict-markers')
         break
       case 'git:push':
         if (event.branch === 'main' && event.result === 'ok') this.recordMistake('pushed-to-main')

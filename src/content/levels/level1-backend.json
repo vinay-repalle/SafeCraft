@@ -1,0 +1,395 @@
+{
+  "id": 1,
+  "perspective": "backend",
+  "title": "First ticket and branch",
+  "whyItExists": "Everyone works on their own copy of the code, so nobody overwrites a teammate while they are still working.",
+  "recap": "A team shares one codebase. You pick up a ticket, work on your own branch, and your change reaches the live app only after automated tests and a review.",
+  "scenario": {
+    "app": "Bowlful, a food ordering app",
+    "ticket": {
+      "id": "ORD-26",
+      "title": "Rename the ready status to Ready for pickup",
+      "description": "Customers read 'Ready' as 'the food is at my door', but it means the order can be collected. Change the status label to 'Ready for pickup'.",
+      "status": "todo",
+      "assignee": "backend",
+      "type": "story"
+    },
+    "otherTickets": [
+      {
+        "id": "ORD-9",
+        "title": "Add a vegetarian filter to the menu list",
+        "description": "Let customers hide dishes that contain meat or fish.",
+        "status": "done",
+        "assignee": "frontend",
+        "type": "story"
+      },
+      {
+        "id": "ORD-14",
+        "title": "Rename the checkout button to Place order",
+        "description": "Customers read 'Pay now' as an immediate charge.",
+        "status": "inprogress",
+        "assignee": "frontend",
+        "type": "story"
+      },
+      {
+        "id": "ORD-12",
+        "title": "Cart total ignores the delivery fee after removing an item",
+        "description": "Add two dishes, remove one, and the delivery fee disappears from the total.",
+        "status": "todo",
+        "assignee": "backend",
+        "type": "bug"
+      },
+      {
+        "id": "ORD-15",
+        "title": "Send an order confirmation email",
+        "description": "Email the customer a summary once the restaurant accepts the order.",
+        "status": "todo",
+        "assignee": null,
+        "type": "task"
+      }
+    ],
+    "files": [
+      {
+        "path": "src/api/orderStatus.js",
+        "content": "export const ORDER_STATUSES = {\n  placed: 'Order placed',\n  preparing: 'Preparing',\n  ready: 'Ready',\n  delivered: 'Delivered',\n}\n"
+      },
+      {
+        "path": "src/api/orders.js",
+        "content": "import { ORDER_STATUSES } from './orderStatus.js'\n\nexport function getOrder(id) {\n  return { id, status: ORDER_STATUSES.preparing }\n}\n"
+      }
+    ],
+    "remoteCommits": [
+      {
+        "author": "Tomás Rivera",
+        "role": "backend",
+        "branch": "main",
+        "message": "Add delivery fee to the order response",
+        "changes": {
+          "src/api/orders.js": "import { ORDER_STATUSES } from './orderStatus.js'\n\nexport function getOrder(id) {\n  return { id, status: ORDER_STATUSES.preparing, deliveryFee: 2.5 }\n}\n"
+        }
+      }
+    ]
+  },
+  "tests": [
+    {
+      "id": "status-label",
+      "name": "The ready status says \"Ready for pickup\"",
+      "rule": {
+        "type": "includes",
+        "path": "src/api/orderStatus.js",
+        "text": "ready: 'Ready for pickup'"
+      }
+    },
+    {
+      "id": "status-old-label",
+      "name": "The ready status no longer says only \"Ready\"",
+      "rule": {
+        "type": "excludes",
+        "path": "src/api/orderStatus.js",
+        "text": "ready: 'Ready',"
+      }
+    },
+    {
+      "id": "statuses-exported",
+      "name": "ORDER_STATUSES is still exported",
+      "rule": {
+        "type": "includes",
+        "path": "src/api/orderStatus.js",
+        "text": "export const ORDER_STATUSES"
+      }
+    },
+    {
+      "id": "orders-exists",
+      "name": "The orders endpoint file still exists",
+      "rule": {
+        "type": "fileExists",
+        "path": "src/api/orders.js"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "id": "read-ticket-message",
+      "role": "backend",
+      "kind": "chat",
+      "prompt": "Priya, the project manager, has assigned you a ticket. Read her message and choose a reply.",
+      "chat": {
+        "id": "intro",
+        "from": {
+          "name": "Priya Nair",
+          "role": "pm"
+        },
+        "message": "ORD-26 is on the board and assigned to you. Customers read 'Ready' as 'the food is at my door', but it means the order can be collected. The status label should say 'Ready for pickup'.",
+        "replies": [
+          {
+            "id": "ack",
+            "text": "Understood. I'll start on it.",
+            "response": "Thanks. Pull the latest main first, so you start from the newest code."
+          },
+          {
+            "id": "ask-main",
+            "text": "It's one line. Can I push it straight to main?",
+            "response": "No. Work on your own branch and open a pull request, so tests and a review happen before it goes live. Pull the latest main first."
+          }
+        ]
+      },
+      "check": {
+        "type": "chatDone",
+        "chatId": "intro"
+      },
+      "autoFill": "ack",
+      "terms": [
+        "ticket"
+      ],
+      "stationEvent": {
+        "station": "pm",
+        "status": "active",
+        "packageFrom": "client"
+      }
+    },
+    {
+      "id": "sync-start",
+      "role": "backend",
+      "kind": "syncCheck",
+      "prompt": "Pull the latest main before you start. Type the command below.",
+      "hint": "The command is git pull origin main. It brings in everything your teammates added since you last pulled.",
+      "check": {
+        "type": "syncResolved",
+        "phase": "start"
+      },
+      "autoFill": "git pull origin main",
+      "terms": [
+        "pull",
+        "remote-origin"
+      ]
+    },
+    {
+      "id": "start-ticket",
+      "role": "backend",
+      "kind": "board",
+      "prompt": "Move ORD-26 from To do to In progress, so the team can see you have picked it up.",
+      "hint": "Drag the ORD-26 card to the In progress column.",
+      "check": {
+        "type": "ticketStatus",
+        "ticketId": "ORD-26",
+        "status": "inprogress"
+      },
+      "autoFill": "inprogress",
+      "terms": [
+        "ticket",
+        "jira-board"
+      ],
+      "stationEvent": {
+        "station": "dev",
+        "status": "active",
+        "packageFrom": "pm"
+      }
+    },
+    {
+      "id": "create-branch",
+      "role": "backend",
+      "kind": "git",
+      "prompt": "Create your own branch for this ticket. Put the ticket number in the name, for example feature/ORD-26-ready-for-pickup.",
+      "hint": "The command is git checkout -b followed by the branch name. A good name starts with feature/ or fix/ and includes ORD-26.",
+      "check": {
+        "type": "branchNamed",
+        "pattern": "^(feature|fix|chore)/ord-26-[a-z0-9]+(-[a-z0-9]+)*$",
+        "flags": "i"
+      },
+      "autoFill": "git checkout -b feature/ORD-26-ready-for-pickup",
+      "terms": [
+        "branch"
+      ]
+    },
+    {
+      "id": "edit-status",
+      "role": "backend",
+      "kind": "code",
+      "prompt": "In src/api/orderStatus.js, change the ready label from Ready to Ready for pickup.",
+      "check": {
+        "type": "fileContains",
+        "path": "src/api/orderStatus.js",
+        "includes": "ready: 'Ready for pickup'",
+        "excludes": "ready: 'Ready',"
+      },
+      "autoFill": "export const ORDER_STATUSES = {\n  placed: 'Order placed',\n  preparing: 'Preparing',\n  ready: 'Ready for pickup',\n  delivered: 'Delivered',\n}\n",
+      "hint": "Only the text inside the quotes changes. Leave the comma after it."
+    },
+    {
+      "id": "commit-change",
+      "role": "backend",
+      "kind": "git",
+      "prompt": "Save your change as a commit, with a message that says what changed.",
+      "hint": "Run git add . and then git commit -m followed by a message in quotes, for example \"ORD-26 Rename ready status to Ready for pickup\".",
+      "check": {
+        "type": "branchHasCommit"
+      },
+      "autoFill": "git add .\ngit commit -m \"ORD-26 Rename ready status to Ready for pickup\"",
+      "terms": [
+        "commit"
+      ]
+    },
+    {
+      "id": "sync-push",
+      "role": "backend",
+      "kind": "syncCheck",
+      "prompt": "Pull again before you push, in case a teammate changed something while you worked.",
+      "hint": "The command is git pull origin main.",
+      "check": {
+        "type": "syncResolved",
+        "phase": "push"
+      },
+      "autoFill": "git pull origin main",
+      "terms": [
+        "pull"
+      ]
+    },
+    {
+      "id": "push-branch",
+      "role": "backend",
+      "kind": "git",
+      "prompt": "Push your branch to GitHub so the team can see it.",
+      "hint": "The command is git push -u origin followed by your branch name.",
+      "check": {
+        "type": "pushed"
+      },
+      "autoFill": "git push -u origin {branch}",
+      "terms": [
+        "push",
+        "remote-origin"
+      ],
+      "stationEvent": {
+        "station": "github",
+        "status": "active",
+        "packageFrom": "dev"
+      }
+    },
+    {
+      "id": "raise-pr",
+      "role": "backend",
+      "kind": "pr",
+      "prompt": "Raise a pull request asking your teammates to review your branch.",
+      "hint": "Give it a title that matches the ticket.",
+      "check": {
+        "type": "prRaised"
+      },
+      "autoFill": "ORD-26 Rename ready status to Ready for pickup",
+      "terms": [
+        "pull-request"
+      ]
+    },
+    {
+      "id": "run-tests",
+      "role": "qa",
+      "kind": "tests",
+      "prompt": "Automated tests run on your pull request. Watch the result.",
+      "auto": {
+        "type": "runTests"
+      },
+      "check": {
+        "type": "testsPassed"
+      },
+      "terms": [
+        "automated-tests"
+      ]
+    },
+    {
+      "id": "review",
+      "role": "reviewer",
+      "kind": "review",
+      "prompt": "A teammate reads the change and approves it.",
+      "auto": {
+        "type": "approvePr"
+      },
+      "check": {
+        "type": "prApproved"
+      },
+      "terms": [
+        "code-review"
+      ],
+      "stationEvent": {
+        "station": "github",
+        "status": "pass"
+      }
+    },
+    {
+      "id": "merge-pr",
+      "role": "backend",
+      "kind": "pr",
+      "prompt": "Tests passed and the change is approved. Merge the pull request into main.",
+      "check": {
+        "type": "prMerged"
+      },
+      "autoFill": "merge",
+      "terms": [
+        "merge"
+      ],
+      "stationEvent": {
+        "station": "live",
+        "status": "active",
+        "packageFrom": "tests"
+      }
+    },
+    {
+      "id": "release",
+      "role": "pm",
+      "kind": "deploy",
+      "prompt": "The merged change is released to the live app.",
+      "auto": {
+        "type": "deploy"
+      },
+      "check": {
+        "type": "deployed"
+      },
+      "terms": [
+        "deploy"
+      ],
+      "stationEvent": {
+        "station": "live",
+        "status": "pass"
+      }
+    }
+  ],
+  "replay": [
+    {
+      "mistake": "skipped-start-pull",
+      "you": "You started work without pulling the latest main.",
+      "result": "On a real team your branch would miss Tomás's change (the delivery fee in the order response). Your pull request would show as out of date, and the gap grows with every hour you wait."
+    },
+    {
+      "mistake": "branch-behind-main",
+      "you": "You created your branch from an out-of-date copy of main.",
+      "result": "Your work starts from old code. Reviewers see a branch that does not match main, and merging it gets harder the longer it stays that way."
+    },
+    {
+      "mistake": "unclear-branch-name",
+      "you": "You named your branch something that does not point to the ticket.",
+      "result": "Teammates cannot tell what the branch is for, and nobody can find it from ORD-26."
+    },
+    {
+      "mistake": "committed-on-main",
+      "you": "You committed your change directly on main.",
+      "result": "Your change would skip review. Anyone who pulls main would get half-finished work."
+    },
+    {
+      "mistake": "vague-commit-message",
+      "you": "You wrote a commit message that does not say what changed.",
+      "result": "Months later nobody can tell why that line changed without opening the code, and searching the history finds nothing."
+    },
+    {
+      "mistake": "skipped-prepush-pull",
+      "you": "You pushed without pulling first.",
+      "result": "If a teammate had pushed to the same branch in the meantime, Git would have rejected your push and you would have had to untangle it afterwards."
+    },
+    {
+      "mistake": "pushed-to-main",
+      "you": "You pushed straight to main.",
+      "result": "The live app would be built from code that nobody reviewed and no test ran on, so a typo could break the app for every customer."
+    },
+    {
+      "mistake": "pr-out-of-date",
+      "you": "You raised a pull request from an out-of-date branch.",
+      "result": "GitHub would show \"This branch is out-of-date with the base branch\", and your reviewer would wait for you to update it before they could trust the result."
+    }
+  ]
+}

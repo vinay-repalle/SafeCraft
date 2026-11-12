@@ -22,7 +22,7 @@ const STATUS_LABEL = Object.fromEntries(COLUMNS.map((c) => [c.id, c.label]))
 // Turns one engine event into a line for the team feed, or null when it is not worth a line.
 // `actor` is whoever owns the step that was current when the event fired: the learner's
 // own role for their actions, or the observe-only role for steps the engine performs.
-export function describeEvent(event: EngineEvent, actor: Role): Omit<FeedItem, 'id'> | null {
+export function describeEvent(event: EngineEvent, actor: Role, teammate: Role = 'backend'): Omit<FeedItem, 'id'> | null {
   switch (event.type) {
     case 'chat:reply':
       return { actor, notifies: [], text: 'Replied in the team chat' }
@@ -37,6 +37,10 @@ export function describeEvent(event: EngineEvent, actor: Role): Omit<FeedItem, '
     case 'git:push':
       if (event.result === 'rejected') return { actor, notifies: [], text: `Push of ${event.branch} was rejected` }
       return { actor, notifies: ['reviewer', 'qa'], text: `Pushed ${event.branch} to GitHub` }
+    case 'git:remote-commit':
+      return { actor: teammate, notifies: teammate === actor ? [] : [actor], text: `Pushed to ${event.branch}: ${event.message}` }
+    case 'jira:ticket-updated':
+      return { actor: 'pm', notifies: ['frontend', 'backend', 'qa'], text: `Changed the requirement on ${event.ticketId}` }
     case 'github:pr-opened':
       return { actor, notifies: ['reviewer', 'qa'], text: `Raised pull request #${event.pr.id}` }
     case 'tests:run':

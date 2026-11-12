@@ -1,6 +1,7 @@
-import { FastForward, Lightbulb } from 'lucide-react'
+import { ArrowRight, FastForward, Lightbulb } from 'lucide-react'
 import { useState } from 'react'
 import { ROLE_INFO } from '../app/nav'
+import { LEVEL_IDS } from '../content'
 import { useCurrentStep, useLevelStore } from '../store/levelStore'
 import { FirstTimeCard } from './jargon/TermCard'
 import { JargonText } from './jargon/JargonText'
@@ -14,6 +15,8 @@ export function StepCard() {
   const autoFill = useLevelStore((s) => s.autoFill)
   const openReplay = useLevelStore((s) => s.openReplay)
   const restart = useLevelStore((s) => s.restart)
+  const load = useLevelStore((s) => s.load)
+  const levelId = useLevelStore((s) => s.levelId)
   const step = useCurrentStep()
   // Remember which step's hint is open, so it closes by itself when the step changes.
   const [hintFor, setHintFor] = useState<string | null>(null)
@@ -41,6 +44,12 @@ export function StepCard() {
             <button type="button" className={PANEL_BUTTON} onClick={restart}>
               Play again
             </button>
+            {LEVEL_IDS.includes(levelId + 1) && (
+              <button type="button" className={PANEL_BUTTON} onClick={() => load(levelId + 1)}>
+                Next level
+                <ArrowRight size={16} strokeWidth={1.5} />
+              </button>
+            )}
           </div>
         </>
       ) : (
@@ -56,6 +65,10 @@ export function StepCard() {
 
           {hintFor === step.id && step.hint && <p className="mt-2 text-caption text-ink-2">{step.hint}</p>}
           {notice && <p className="mt-2 text-caption text-fail">{notice}</p>}
+          {/* Tests that run on their own can fail. Say what to do, since the learner has no button for it. */}
+          {step.auto?.type === 'runTests' && snapshot.lastTestReport && !snapshot.lastTestReport.passed && (
+            <p className="mt-2 text-caption text-fail">The tests failed. Open the Pull request tab, read the log, fix the code, commit and push again. The tests run again by themselves.</p>
+          )}
 
           <div className="mt-3 flex flex-wrap gap-2">
             {step.hint && (

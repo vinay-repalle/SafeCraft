@@ -154,3 +154,81 @@ describe('levelStore', () => {
     expect(progress().completed[1]).toEqual({ frontend: true, backend: true })
   })
 })
+
+describe('levelStore: levels and roles', () => {
+  const finish = () => {
+    for (let i = 0; i < 60 && !level().snapshot?.finished; i++) level().autoFill()
+  }
+
+  it('loads any level, in either seat', () => {
+    level().load(3, { role: 'backend' })
+    expect(level().levelId).toBe(3)
+    expect(level().playRole).toBe('backend')
+    expect(level().runner?.level.scenario.ticket.id).toBe('ORD-33')
+    level().load(3, { role: 'frontend' })
+    expect(level().runner?.level.scenario.ticket.id).toBe('ORD-17')
+  })
+
+  it('keeps your seat when you play again or open another level', () => {
+    level().load(2, { role: 'backend' })
+    level().load(4)
+    expect(level().playRole).toBe('backend')
+    expect(level().runner?.level.perspective).toBe('backend')
+    level().restart()
+    expect(level().runner?.level.perspective).toBe('backend')
+  })
+
+  it('saves completion under the role you played', () => {
+    level().load(2, { role: 'backend' })
+    finish()
+    expect(progress().completed[2]).toEqual({ backend: true })
+    level().load(2, { role: 'frontend' })
+    finish()
+    expect(progress().completed[2]).toEqual({ backend: true, frontend: true })
+  })
+
+  it('closes Sync Check and explains when a pull stops on a merge conflict', () => {
+    level().load(4, { skipRecap: true })
+    // Play up to the step where Aisha has pushed the clashing change.
+    for (let i = 0; i < 60 && level().snapshot?.currentStepId !== 'mate-heads-up'; i++) level().autoFill()
+    level().autoFill() // answer her message
+    expect(level().snapshot?.currentStepId).toBe('pull-main')
+    // Pushing without pulling opens Sync Check. Pulling inside it hits the conflict.
+    level().act({ type: 'git', command: 'git push -u origin feature/ORD-21-delivery-label' })
+    expect(level().popup).toMatchObject({ type: 'sync', phase: 'push' })
+    level().submitSyncCommand('git pull origin main')
+    expect(level().popup).toBeNull()
+    expect(level().notice).toContain('merge conflict')
+    expect(level().snapshot?.git.conflicts).toHaveLength(1)
+    expect(level().terminal.some((l) => l.kind === 'error' && l.text.includes('CONFLICT'))).toBe(true)
+  })
+
+  it('shows a second developer only while a teammate works on the same code in a conflict level', () => {
+    level().load(4, { skipRecap: true })
+    expect(level().teammateActive).toBe(false)
+    for (let i = 0; i < 60 && level().snapshot?.currentStepId !== 'mate-heads-up'; i++) level().autoFill()
+    expect(level().teammateActive).toBe(true)
+    level().autoFill()
+    level().autoFill() // the pull, which stops on the conflict
+    expect(level().teammateActive).toBe(false)
+    expect(level().snapshot?.git.conflicts).toHaveLength(1)
+
+    // A teammate push in a level without a conflict does not call for one.
+    level().load(2, { skipRecap: true })
+    for (let i = 0; i < 60 && level().snapshot?.currentStepId !== 'write-mock'; i++) level().autoFill()
+    expect(level().teammateActive).toBe(false)
+  })
+
+  it('puts the teammate push and the requirement change in the team feed under the right roles', () => {
+    level().load(5, { skipRecap: true })
+    level().act({ type: 'chat', chatId: 'change', replyId: 'check-contract' })
+    expect(level().feed.some((f) => f.actor === 'pm' && f.text === 'Changed the requirement on ORD-23')).toBe(true)
+    for (let i = 0; i < 60 && level().snapshot?.currentStepId !== 'update-ui'; i++) level().autoFill()
+    const push = level().feed.find((f) => f.text.startsWith('Pushed to main'))
+    expect(push).toMatchObject({ actor: 'backend', notifies: ['frontend'] })
+
+    level().load(5, { skipRecap: true, role: 'backend' })
+    for (let i = 0; i < 60 && level().snapshot?.currentStepId !== 'update-endpoint'; i++) level().autoFill()
+    expect(level().feed.find((f) => f.text.startsWith('Pushed to main'))).toMatchObject({ actor: 'frontend', notifies: ['backend'] })
+  })
+})

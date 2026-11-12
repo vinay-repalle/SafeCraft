@@ -132,6 +132,30 @@
       "analogy": "Putting the new dish on the menu after it passes the taste test.",
       "example": "After the merge, the live Bowlful app shows Place order.",
       "guide": "why-we-never-push-directly-to-main"
+    },
+    {
+      "id": "mock-data",
+      "term": "Mock data",
+      "meaning": "Made-up data shaped like the real thing, so you can build a screen before the backend exists.",
+      "analogy": "A practice menu you rehearse with before the real menu is printed.",
+      "example": "order.mock.json holds { \"status\": \"preparing\", \"estimatedMinutes\": 25 }.",
+      "guide": "what-is-an-api-contract"
+    },
+    {
+      "id": "endpoint",
+      "term": "Endpoint",
+      "meaning": "A web address the frontend asks for data, such as GET /api/orders/42.",
+      "analogy": "The kitchen's service window: you ask at the window and get a plate back.",
+      "example": "GET /api/orders/42 returns the status of order 42.",
+      "guide": "what-is-an-api-contract"
+    },
+    {
+      "id": "conflict-markers",
+      "term": "Conflict markers",
+      "meaning": "The <<<<<<<, ======= and >>>>>>> lines Git writes into a file to show where two changes clash.",
+      "analogy": "Two sticky notes stuck on the same sentence, each saying what it should become.",
+      "example": "Above ======= is your version of the line. Below it is your teammate's.",
+      "guide": "what-is-a-merge-conflict"
     }
   ]
 }

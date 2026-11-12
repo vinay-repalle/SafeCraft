@@ -1,0 +1,490 @@
+{
+  "id": 4,
+  "perspective": "frontend",
+  "title": "Merge conflict",
+  "whyItExists": "Two people can change the same line at the same time. Git cannot guess which one is right, so it stops and asks. A conflict is a question, not an error.",
+  "recap": "When two people edit the same lines, Git marks the clash in the file and waits for a person to decide. You keep the right parts of both changes, remove the markers, and commit. Pulling before you push finds the clash on your own computer, before anyone else is affected.",
+  "scenario": {
+    "app": "Bowlful, a food ordering app",
+    "ticket": {
+      "id": "ORD-21",
+      "title": "Rename 'Delivery fee' to 'Delivery' in the cart summary",
+      "description": "The checkout page says 'Delivery'. Make the cart summary use the same word.",
+      "status": "todo",
+      "assignee": "frontend",
+      "type": "story"
+    },
+    "otherTickets": [
+      {
+        "id": "ORD-9",
+        "title": "Add a vegetarian filter to the menu list",
+        "description": "Let customers hide dishes that contain meat or fish.",
+        "status": "done",
+        "assignee": "frontend",
+        "type": "story"
+      },
+      {
+        "id": "ORD-22",
+        "title": "Say that the delivery fee includes tax",
+        "description": "Customers asked whether the delivery fee includes tax. Add (incl. tax) after the amount.",
+        "status": "inprogress",
+        "assignee": "frontend",
+        "type": "story"
+      },
+      {
+        "id": "ORD-12",
+        "title": "Cart total ignores the delivery fee after removing an item",
+        "description": "Add two dishes, remove one, and the delivery fee disappears from the total.",
+        "status": "todo",
+        "assignee": "backend",
+        "type": "bug"
+      }
+    ],
+    "files": [
+      {
+        "path": "src/components/CartSummary.jsx",
+        "content": "export function CartSummary({ items }) {\n  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)\n  const deliveryFee = 2.5\n  return (\n    <section className=\"cart-summary\">\n      <h2>Your order</h2>\n      <p>Subtotal: ${subtotal.toFixed(2)}</p>\n      <p>Delivery fee: ${deliveryFee.toFixed(2)}</p>\n    </section>\n  )\n}\n"
+      },
+      {
+        "path": "src/components/CheckoutButton.jsx",
+        "content": "export function CheckoutButton({ total, onCheckout }) {\n  return (\n    <button className=\"checkout-button\" onClick={onCheckout}>\n      Place order · ${total.toFixed(2)}\n    </button>\n  )\n}\n"
+      }
+    ]
+  },
+  "tests": [
+    {
+      "id": "label-renamed",
+      "name": "The delivery line says 'Delivery'",
+      "rule": {
+        "type": "includes",
+        "path": "src/components/CartSummary.jsx",
+        "text": "<p>Delivery: "
+      }
+    },
+    {
+      "id": "tax-kept",
+      "name": "Aisha's (incl. tax) note is still there",
+      "rule": {
+        "type": "includes",
+        "path": "src/components/CartSummary.jsx",
+        "text": "(incl. tax)"
+      }
+    },
+    {
+      "id": "no-markers-start",
+      "name": "No conflict markers are left in the file",
+      "rule": {
+        "type": "excludes",
+        "path": "src/components/CartSummary.jsx",
+        "text": "<<<<<<<"
+      }
+    },
+    {
+      "id": "no-markers-end",
+      "name": "No conflict markers are left at the end either",
+      "rule": {
+        "type": "excludes",
+        "path": "src/components/CartSummary.jsx",
+        "text": ">>>>>>>"
+      }
+    },
+    {
+      "id": "cart-exported",
+      "name": "CartSummary is still exported",
+      "rule": {
+        "type": "includes",
+        "path": "src/components/CartSummary.jsx",
+        "text": "export function CartSummary"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "id": "read-ticket-message",
+      "role": "frontend",
+      "kind": "chat",
+      "prompt": "Priya, the project manager, has assigned you a ticket. Read her message and choose a reply.",
+      "chat": {
+        "id": "intro",
+        "from": {
+          "name": "Priya Nair",
+          "role": "pm"
+        },
+        "message": "ORD-21 is on the board and assigned to you. In the cart summary the line says 'Delivery fee', but the checkout page just says 'Delivery'. Make the cart match: change 'Delivery fee' to 'Delivery'.",
+        "replies": [
+          {
+            "id": "ack",
+            "text": "Understood. I'll start on it.",
+            "response": "Thanks. Pull the latest main first, so you start from the newest code."
+          },
+          {
+            "id": "ask-main",
+            "text": "Can I push it straight to main?",
+            "response": "No. Work on your own branch and open a pull request, so tests and a review happen before it goes live. Pull the latest main first."
+          }
+        ]
+      },
+      "check": {
+        "type": "chatDone",
+        "chatId": "intro"
+      },
+      "autoFill": "ack",
+      "terms": [
+        "ticket"
+      ],
+      "stationEvent": {
+        "station": "pm",
+        "status": "active",
+        "packageFrom": "client"
+      }
+    },
+    {
+      "id": "sync-start",
+      "role": "frontend",
+      "kind": "syncCheck",
+      "prompt": "Pull the latest main before you start. Type the command below.",
+      "hint": "The command is git pull origin main. It brings in everything your teammates added since you last pulled.",
+      "check": {
+        "type": "syncResolved",
+        "phase": "start"
+      },
+      "autoFill": "git pull origin main",
+      "terms": [
+        "pull",
+        "remote-origin"
+      ]
+    },
+    {
+      "id": "start-ticket",
+      "role": "frontend",
+      "kind": "board",
+      "prompt": "Move ORD-21 from To do to In progress, so the team can see you have picked it up.",
+      "hint": "Drag the ORD-21 card to the In progress column.",
+      "check": {
+        "type": "ticketStatus",
+        "ticketId": "ORD-21",
+        "status": "inprogress"
+      },
+      "autoFill": "inprogress",
+      "terms": [
+        "ticket",
+        "jira-board"
+      ],
+      "stationEvent": {
+        "station": "dev",
+        "status": "active",
+        "packageFrom": "pm"
+      }
+    },
+    {
+      "id": "create-branch",
+      "role": "frontend",
+      "kind": "git",
+      "prompt": "Create your own branch for this ticket. Put the ticket number in the name, for example feature/ORD-21-delivery-label.",
+      "hint": "The command is git checkout -b followed by the branch name. A good name starts with feature/ or fix/ and includes ORD-21.",
+      "check": {
+        "type": "branchNamed",
+        "pattern": "^(feature|fix|chore)/ord-21-[a-z0-9]+(-[a-z0-9]+)*$",
+        "flags": "i"
+      },
+      "autoFill": "git checkout -b feature/ORD-21-delivery-label",
+      "terms": [
+        "branch"
+      ]
+    },
+    {
+      "id": "edit-line",
+      "role": "frontend",
+      "kind": "code",
+      "prompt": "In src/components/CartSummary.jsx, change the delivery line from Delivery fee to Delivery.",
+      "check": {
+        "type": "fileContains",
+        "path": "src/components/CartSummary.jsx",
+        "includes": "<p>Delivery: ${deliveryFee.toFixed(2)}</p>",
+        "excludes": "Delivery fee:"
+      },
+      "autoFill": "export function CartSummary({ items }) {\n  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)\n  const deliveryFee = 2.5\n  return (\n    <section className=\"cart-summary\">\n      <h2>Your order</h2>\n      <p>Subtotal: ${subtotal.toFixed(2)}</p>\n      <p>Delivery: ${deliveryFee.toFixed(2)}</p>\n    </section>\n  )\n}\n",
+      "hint": "Only the word fee is removed. Leave the amount after it."
+    },
+    {
+      "id": "commit-change",
+      "role": "frontend",
+      "kind": "git",
+      "prompt": "Save your change as a commit, with a message that says what changed.",
+      "hint": "Run git add . and then git commit -m followed by a message in quotes, for example \"ORD-21 Rename delivery fee label to Delivery\".",
+      "check": {
+        "type": "branchHasCommit"
+      },
+      "autoFill": "git add .\ngit commit -m \"ORD-21 Rename delivery fee label to Delivery\"",
+      "terms": [
+        "commit"
+      ],
+      "after": {
+        "remoteCommit": {
+          "author": "Aisha Khan",
+          "role": "frontend",
+          "branch": "main",
+          "message": "ORD-22 Say that the delivery fee includes tax",
+          "changes": {
+            "src/components/CartSummary.jsx": "export function CartSummary({ items }) {\n  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)\n  const deliveryFee = 2.5\n  return (\n    <section className=\"cart-summary\">\n      <h2>Your order</h2>\n      <p>Subtotal: ${subtotal.toFixed(2)}</p>\n      <p>Delivery fee: ${deliveryFee.toFixed(2)} (incl. tax)</p>\n    </section>\n  )\n}\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "mate-heads-up",
+      "role": "frontend",
+      "kind": "chat",
+      "prompt": "Aisha pushed a change to main. Read the message and choose a reply.",
+      "chat": {
+        "id": "heads-up",
+        "from": {
+          "name": "Aisha Khan",
+          "role": "frontend"
+        },
+        "message": "I just pushed my change to the delivery line on main, for ORD-22. It now says (incl. tax). It is already in.",
+        "replies": [
+          {
+            "id": "pull-first",
+            "text": "Thanks. I'll pull main before I push and sort out any overlap.",
+            "response": "Good. If we touched the same line, Git will tell you when you pull, and you can fix it on your own computer."
+          },
+          {
+            "id": "last-wins",
+            "text": "Mine is ready too. I'll push it and the last one in wins.",
+            "response": "Git does not work like that. It will not quietly pick a winner, it will stop on a conflict and someone has to decide by hand. Pull main first and look at both changes.",
+            "mistake": "overwrote-teammate"
+          }
+        ]
+      },
+      "check": {
+        "type": "chatDone",
+        "chatId": "heads-up"
+      },
+      "autoFill": "pull-first",
+      "terms": [
+        "merge-conflict"
+      ]
+    },
+    {
+      "id": "pull-main",
+      "role": "frontend",
+      "kind": "git",
+      "prompt": "Pull main into your branch before you push. Because you both changed the same line, Git will stop on a merge conflict. That is expected.",
+      "hint": "The command is git pull origin main. Git will say CONFLICT and mark the file.",
+      "check": {
+        "type": "conflict"
+      },
+      "autoFill": "git pull origin main",
+      "terms": [
+        "pull",
+        "merge-conflict"
+      ]
+    },
+    {
+      "id": "resolve-conflict",
+      "role": "frontend",
+      "kind": "code",
+      "prompt": "Git has stopped on a merge conflict in CartSummary.jsx. The file now has <<<<<<<, ======= and >>>>>>> lines around the delivery line. Keep both changes: your word Delivery and Aisha's (incl. tax). Delete the marker lines.",
+      "check": {
+        "type": "fileContains",
+        "path": "src/components/CartSummary.jsx",
+        "includes": "<p>Delivery: ${deliveryFee.toFixed(2)} (incl. tax)</p>",
+        "excludes": "<<<<<<<"
+      },
+      "autoFill": "export function CartSummary({ items }) {\n  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)\n  const deliveryFee = 2.5\n  return (\n    <section className=\"cart-summary\">\n      <h2>Your order</h2>\n      <p>Subtotal: ${subtotal.toFixed(2)}</p>\n      <p>Delivery: ${deliveryFee.toFixed(2)} (incl. tax)</p>\n    </section>\n  )\n}\n",
+      "hint": "Between <<<<<<< and ======= is your version, and below ======= is Aisha's. Write one line that has both changes, then delete the three marker lines.",
+      "terms": [
+        "merge-conflict",
+        "conflict-markers"
+      ]
+    },
+    {
+      "id": "commit-merge",
+      "role": "frontend",
+      "kind": "git",
+      "prompt": "Finish the merge: stage the file and commit it.",
+      "hint": "Run git add . and then git commit -m followed by a message in quotes, for example \"Merge main into my branch\".",
+      "check": {
+        "type": "conflictResolved"
+      },
+      "autoFill": "git add .\ngit commit -m \"Merge main into ORD-21-delivery-label\"",
+      "terms": [
+        "commit",
+        "merge"
+      ]
+    },
+    {
+      "id": "sync-push",
+      "role": "frontend",
+      "kind": "syncCheck",
+      "prompt": "Pull once more before you push. It should say Already up to date.",
+      "hint": "The command is git pull origin main.",
+      "check": {
+        "type": "syncResolved",
+        "phase": "push"
+      },
+      "autoFill": "git pull origin main",
+      "terms": [
+        "pull"
+      ]
+    },
+    {
+      "id": "push-branch",
+      "role": "frontend",
+      "kind": "git",
+      "prompt": "Push your branch to GitHub so the team can see it.",
+      "hint": "The command is git push -u origin followed by your branch name.",
+      "check": {
+        "type": "pushed"
+      },
+      "autoFill": "git push -u origin {branch}",
+      "terms": [
+        "push",
+        "remote-origin"
+      ],
+      "stationEvent": {
+        "station": "github",
+        "status": "active",
+        "packageFrom": "dev"
+      }
+    },
+    {
+      "id": "raise-pr",
+      "role": "frontend",
+      "kind": "pr",
+      "prompt": "Raise a pull request asking your teammates to review your branch.",
+      "hint": "Give it a title that matches the ticket.",
+      "check": {
+        "type": "prRaised"
+      },
+      "autoFill": "ORD-21 Rename delivery fee label to Delivery",
+      "terms": [
+        "pull-request"
+      ]
+    },
+    {
+      "id": "run-tests",
+      "role": "qa",
+      "kind": "tests",
+      "prompt": "Automated tests run on your pull request. Watch the result.",
+      "auto": {
+        "type": "runTests"
+      },
+      "check": {
+        "type": "testsPassed"
+      },
+      "terms": [
+        "automated-tests"
+      ]
+    },
+    {
+      "id": "review",
+      "role": "reviewer",
+      "kind": "review",
+      "prompt": "A teammate reads the change and approves it.",
+      "auto": {
+        "type": "approvePr"
+      },
+      "check": {
+        "type": "prApproved"
+      },
+      "terms": [
+        "code-review"
+      ],
+      "stationEvent": {
+        "station": "github",
+        "status": "pass"
+      }
+    },
+    {
+      "id": "merge-pr",
+      "role": "frontend",
+      "kind": "pr",
+      "prompt": "Tests passed and the change is approved. Merge the pull request into main.",
+      "check": {
+        "type": "prMerged"
+      },
+      "autoFill": "merge",
+      "terms": [
+        "merge"
+      ],
+      "stationEvent": {
+        "station": "live",
+        "status": "active",
+        "packageFrom": "tests"
+      }
+    },
+    {
+      "id": "release",
+      "role": "pm",
+      "kind": "deploy",
+      "prompt": "The merged change is released to the live app.",
+      "auto": {
+        "type": "deploy"
+      },
+      "check": {
+        "type": "deployed"
+      },
+      "terms": [
+        "deploy"
+      ],
+      "stationEvent": {
+        "station": "live",
+        "status": "pass"
+      }
+    }
+  ],
+  "replay": [
+    {
+      "mistake": "skipped-start-pull",
+      "you": "You started work without pulling the latest main.",
+      "result": "On a real team your branch would miss Aisha's change (the (incl. tax) note on the delivery line). Your pull request would show as out of date, and the gap grows with every hour you wait."
+    },
+    {
+      "mistake": "branch-behind-main",
+      "you": "You created your branch from an out-of-date copy of main.",
+      "result": "Your work starts from old code. Reviewers see a branch that does not match main, and merging it gets harder the longer it stays that way."
+    },
+    {
+      "mistake": "unclear-branch-name",
+      "you": "You named your branch something that does not point to the ticket.",
+      "result": "Teammates cannot tell what the branch is for, and nobody can find it from ORD-21."
+    },
+    {
+      "mistake": "committed-on-main",
+      "you": "You committed your change directly on main.",
+      "result": "Your change would skip review. Anyone who pulls main would get half-finished work."
+    },
+    {
+      "mistake": "vague-commit-message",
+      "you": "You wrote a commit message that does not say what changed.",
+      "result": "Months later nobody can tell why that line changed without opening the code, and searching the history finds nothing."
+    },
+    {
+      "mistake": "skipped-prepush-pull",
+      "you": "You pushed without pulling first.",
+      "result": "If a teammate had pushed to the same branch in the meantime, Git would have rejected your push and you would have had to untangle it afterwards."
+    },
+    {
+      "mistake": "pushed-to-main",
+      "you": "You pushed straight to main.",
+      "result": "The live app would be built from code that nobody reviewed and no test ran on, so a typo could break the app for every customer."
+    },
+    {
+      "mistake": "pr-out-of-date",
+      "you": "You raised a pull request from an out-of-date branch.",
+      "result": "GitHub would show \"This branch is out-of-date with the base branch\", and your reviewer would wait for you to update it before they could trust the result."
+    },
+    {
+      "mistake": "overwrote-teammate",
+      "you": "You said you would push your version and let the last change win.",
+      "result": "Git does not let the last change win quietly. It stops on a conflict. If someone forces it through, a teammate's work disappears and nobody notices until a customer does."
+    },
+    {
+      "mistake": "committed-conflict-markers",
+      "you": "You committed the file while the <<<<<<< and >>>>>>> lines were still in it.",
+      "result": "The markers are not code. The file would no longer build, the tests would fail, and everyone who pulled it would get a broken file."
+    }
+  ]
+}

@@ -53,11 +53,15 @@ Done when: Level 1 drives the 3D scene and all views work smoothly.
 
 ## Phase 5: Levels 2 to 5
 Done when: all five levels are playable and the Backend role works.
-- [ ] Level 2: API contract handshake
-- [ ] Level 3: failed tests and PR review
-- [ ] Level 4: merge conflict
-- [ ] Level 5: sudden requirement change
-- [ ] Backend role
+- [x] Engine additions, each with tests: teammate or project manager events after a step (`after`), `testsRan`, `conflict` and `conflictResolved` checks, chat replies that record a mistake, level-specific mistakes, conflict commit detection
+- [x] Level 2: API contract handshake (`level2.json`)
+- [x] Level 3: failed tests and PR review (`level3.json`: a red test every learner sees, then fix, re-run, reviewer comment)
+- [x] Level 4: merge conflict (`level4.json`: a teammate pushes the same line, Git stops, the learner resolves it)
+- [x] Level 5: sudden requirement change (`level5.json`: the ticket changes under the learner, contract and code change together)
+- [x] Backend role: all five levels written from the backend seat (`levelN-backend.json`), role bar switches seat, completion saved per role
+- [x] Level map in My view (all levels open, "Start here" hint only), Next level button, failed-test guidance, conflict handling in Sync Check
+- [x] Unslop audit: see [AUDIT-phase-5.md](AUDIT-phase-5.md)
+- [ ] Owner check of the "done when" gate, then Git
 
 ## Phase 6: Field Guide, exports, polish
 Done when: v1 scope works, the unslop checklist passes, the build is ready to deploy.

@@ -2,11 +2,11 @@
 // typos (a wrong ticket id, a missing autoFill, an unknown term) before a learner does.
 // It returns a list of problems in plain English; an empty list means the level is sound.
 import { ROLES } from '../store/types'
-import { MISTAKE_IDS, STATIONS, STEP_KINDS, type Level, type RuleCheck, type Step } from './types'
+import { GENERAL_MISTAKE_IDS, MISTAKE_IDS, STATIONS, STEP_KINDS, type Level, type RuleCheck, type Step } from './types'
 
 const CHECK_TYPES: RuleCheck['type'][] = [
   'ticketStatus', 'branchNamed', 'fileContains', 'branchHasCommit', 'syncResolved', 'pushed',
-  'prRaised', 'testsPassed', 'prApproved', 'prMerged', 'deployed', 'chatDone',
+  'prRaised', 'testsPassed', 'prApproved', 'prMerged', 'deployed', 'chatDone', 'testsRan', 'conflict', 'conflictResolved',
 ]
 const STATUSES = ['todo', 'inprogress', 'review', 'done']
 // Kinds whose steps are done by the learner and so must offer Skip & Auto-Fill.
@@ -25,11 +25,14 @@ export function validateLevel(level: Level, knownTermIds: Set<string>): string[]
   for (const t of tickets) if (!STATUSES.includes(t.status)) problems.push(`Ticket ${t.id} has an unknown status "${t.status}".`)
   if (paths.size !== level.scenario.files.length) problems.push('File paths must be unique.')
 
-  for (const commit of level.scenario.remoteCommits ?? []) {
+  const checkRemoteCommit = (commit: { message: string; changes: Record<string, string | null> }) => {
     for (const path of Object.keys(commit.changes)) {
       if (!paths.has(path)) problems.push(`Remote commit "${commit.message}" changes ${path}, which is not a scenario file.`)
     }
   }
+  for (const commit of level.scenario.remoteCommits ?? []) checkRemoteCommit(commit)
+  for (const step of level.steps) if (step.after?.remoteCommit) checkRemoteCommit(step.after.remoteCommit)
+  if (level.perspective && !['frontend', 'backend'].includes(level.perspective)) problems.push('Only frontend and backend levels can be played in v1.')
 
   const testIds = new Set<string>()
   for (const test of level.tests) {
@@ -39,6 +42,7 @@ export function validateLevel(level: Level, knownTermIds: Set<string>): string[]
   }
 
   const stepIds = new Set<string>()
+  const usedMistakes = new Set<string>(GENERAL_MISTAKE_IDS) // every level can trigger these; others only if a reply does
   const chatIds = new Set(level.steps.flatMap((s) => (s.chat ? [s.chat.id] : [])))
   if (level.steps.length === 0) problems.push('Level has no steps.')
 
@@ -70,6 +74,7 @@ export function validateLevel(level: Level, knownTermIds: Set<string>): string[]
         at(step, 'branch name pattern is not a valid expression.')
       }
     }
+    if (step.after?.ticketUpdate && !ticketIds.has(step.after.ticketUpdate.ticketId)) at(step, `after refers to unknown ticket ${step.after.ticketUpdate.ticketId}.`)
     if (check?.type === 'chatDone' && !chatIds.has(check.chatId)) at(step, `check refers to unknown chat ${check.chatId}.`)
 
     if (step.kind === 'chat') {
@@ -78,6 +83,10 @@ export function validateLevel(level: Level, knownTermIds: Set<string>): string[]
         if (step.chat.replies.length < 2) at(step, 'chat needs at least two replies to choose from.')
         if (step.autoFill && !step.chat.replies.some((r) => r.id === step.autoFill)) at(step, 'autoFill is not one of the chat reply ids.')
         if (check?.type !== 'chatDone' || check.chatId !== step.chat.id) at(step, 'chat steps should check chatDone for their own chat id.')
+        for (const reply of step.chat.replies) {
+          if (reply.mistake && !MISTAKE_IDS.includes(reply.mistake)) at(step, `reply "${reply.id}" refers to unknown mistake "${reply.mistake}".`)
+          if (reply.mistake) usedMistakes.add(reply.mistake)
+        }
       }
     }
     if (step.kind === 'board' && step.autoFill && !STATUSES.includes(step.autoFill)) at(step, 'autoFill must be a ticket status.')
@@ -100,8 +109,9 @@ export function validateLevel(level: Level, knownTermIds: Set<string>): string[]
     replayed.add(rule.mistake)
     if (!rule.you || !rule.result) problems.push(`Replay rule "${rule.mistake}" needs both "you" and "result".`)
   }
+  if (level.steps.some((s) => s.check?.type === 'conflict')) usedMistakes.add('committed-conflict-markers')
   for (const id of MISTAKE_IDS) {
-    if (!replayed.has(id)) problems.push(`No replay rule for mistake "${id}". Add one, or the learner sees nothing.`)
+    if (usedMistakes.has(id) && !replayed.has(id)) problems.push(`No replay rule for mistake "${id}". Add one, or the learner sees nothing.`)
   }
   return problems
 }

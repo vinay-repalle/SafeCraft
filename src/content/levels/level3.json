@@ -1,0 +1,551 @@
+{
+  "id": 3,
+  "perspective": "frontend",
+  "title": "Failed tests and pull request review",
+  "whyItExists": "A second pair of eyes, human and automatic, catches mistakes before they reach customers. A red result is information, not a verdict.",
+  "recap": "Before a change reaches main, automated tests run on your pull request and a teammate reviews it. If a test fails, you read the log, fix the code, push again, and the tests re-run. Then you answer the reviewer and get approval.",
+  "scenario": {
+    "app": "Bowlful, a food ordering app",
+    "ticket": {
+      "id": "ORD-17",
+      "title": "Show the order total including the delivery fee",
+      "description": "Customers see the subtotal and the delivery fee but not what they will pay. Add a Total line below the delivery fee. Suggested line: <p>Total: ${subtotal + deliveryFee}</p>",
+      "status": "todo",
+      "assignee": "frontend",
+      "type": "story"
+    },
+    "otherTickets": [
+      {
+        "id": "ORD-9",
+        "title": "Add a vegetarian filter to the menu list",
+        "description": "Let customers hide dishes that contain meat or fish.",
+        "status": "done",
+        "assignee": "frontend",
+        "type": "story"
+      },
+      {
+        "id": "ORD-11",
+        "title": "Return an estimated delivery time with each order",
+        "description": "The orders endpoint should include an estimate in minutes.",
+        "status": "inprogress",
+        "assignee": "backend",
+        "type": "story"
+      },
+      {
+        "id": "ORD-15",
+        "title": "Send an order confirmation email",
+        "description": "Email the customer a summary once the restaurant accepts the order.",
+        "status": "todo",
+        "assignee": null,
+        "type": "task"
+      }
+    ],
+    "files": [
+      {
+        "path": "src/components/CartSummary.jsx",
+        "content": "export function CartSummary({ items }) {\n  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)\n  const deliveryFee = 2.5\n  return (\n    <section className=\"cart-summary\">\n      <h2>Your order</h2>\n      <p>Subtotal: ${subtotal.toFixed(2)}</p>\n      <p>Delivery fee: ${deliveryFee.toFixed(2)}</p>\n    </section>\n  )\n}\n"
+      },
+      {
+        "path": "src/components/CheckoutButton.jsx",
+        "content": "export function CheckoutButton({ total, onCheckout }) {\n  return (\n    <button className=\"checkout-button\" onClick={onCheckout}>\n      Place order · ${total.toFixed(2)}\n    </button>\n  )\n}\n"
+      }
+    ]
+  },
+  "tests": [
+    {
+      "id": "total-shown",
+      "name": "CartSummary shows a Total line",
+      "rule": {
+        "type": "includes",
+        "path": "src/components/CartSummary.jsx",
+        "text": "<p>Total:"
+      }
+    },
+    {
+      "id": "total-two-decimals",
+      "name": "The total is shown with two decimals, like the other lines",
+      "rule": {
+        "type": "matches",
+        "path": "src/components/CartSummary.jsx",
+        "pattern": "<p>Total:.*\\.toFixed\\(2\\)"
+      }
+    },
+    {
+      "id": "fee-kept",
+      "name": "The delivery fee line is still there",
+      "rule": {
+        "type": "includes",
+        "path": "src/components/CartSummary.jsx",
+        "text": "<p>Delivery fee:"
+      }
+    },
+    {
+      "id": "cart-exported",
+      "name": "CartSummary is still exported",
+      "rule": {
+        "type": "includes",
+        "path": "src/components/CartSummary.jsx",
+        "text": "export function CartSummary"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "id": "read-ticket-message",
+      "role": "frontend",
+      "kind": "chat",
+      "prompt": "Priya, the project manager, has assigned you a ticket. Read her message and choose a reply.",
+      "chat": {
+        "id": "intro",
+        "from": {
+          "name": "Priya Nair",
+          "role": "pm"
+        },
+        "message": "ORD-17 is on the board and assigned to you. Customers see the subtotal and the delivery fee but not what they will pay. The ticket has the exact line to add under the delivery fee.",
+        "replies": [
+          {
+            "id": "ack",
+            "text": "Understood. I'll start on it.",
+            "response": "Thanks. Pull the latest main first, so you start from the newest code."
+          },
+          {
+            "id": "ask-main",
+            "text": "Can I push it straight to main?",
+            "response": "No. Work on your own branch and open a pull request, so tests and a review happen before it goes live. Pull the latest main first."
+          }
+        ]
+      },
+      "check": {
+        "type": "chatDone",
+        "chatId": "intro"
+      },
+      "autoFill": "ack",
+      "terms": [
+        "ticket"
+      ],
+      "stationEvent": {
+        "station": "pm",
+        "status": "active",
+        "packageFrom": "client"
+      }
+    },
+    {
+      "id": "sync-start",
+      "role": "frontend",
+      "kind": "syncCheck",
+      "prompt": "Pull the latest main before you start. Type the command below.",
+      "hint": "The command is git pull origin main. It brings in everything your teammates added since you last pulled.",
+      "check": {
+        "type": "syncResolved",
+        "phase": "start"
+      },
+      "autoFill": "git pull origin main",
+      "terms": [
+        "pull",
+        "remote-origin"
+      ]
+    },
+    {
+      "id": "start-ticket",
+      "role": "frontend",
+      "kind": "board",
+      "prompt": "Move ORD-17 from To do to In progress, so the team can see you have picked it up.",
+      "hint": "Drag the ORD-17 card to the In progress column.",
+      "check": {
+        "type": "ticketStatus",
+        "ticketId": "ORD-17",
+        "status": "inprogress"
+      },
+      "autoFill": "inprogress",
+      "terms": [
+        "ticket",
+        "jira-board"
+      ],
+      "stationEvent": {
+        "station": "dev",
+        "status": "active",
+        "packageFrom": "pm"
+      }
+    },
+    {
+      "id": "create-branch",
+      "role": "frontend",
+      "kind": "git",
+      "prompt": "Create your own branch for this ticket. Put the ticket number in the name, for example feature/ORD-17-order-total.",
+      "hint": "The command is git checkout -b followed by the branch name. A good name starts with feature/ or fix/ and includes ORD-17.",
+      "check": {
+        "type": "branchNamed",
+        "pattern": "^(feature|fix|chore)/ord-17-[a-z0-9]+(-[a-z0-9]+)*$",
+        "flags": "i"
+      },
+      "autoFill": "git checkout -b feature/ORD-17-order-total",
+      "terms": [
+        "branch"
+      ]
+    },
+    {
+      "id": "add-total",
+      "role": "frontend",
+      "kind": "code",
+      "prompt": "The ticket gives the exact line to add. In src/components/CartSummary.jsx, add <p>Total: ${subtotal + deliveryFee}</p> below the delivery fee line.",
+      "check": {
+        "type": "fileContains",
+        "path": "src/components/CartSummary.jsx",
+        "includes": "<p>Total: ${subtotal + deliveryFee}</p>"
+      },
+      "autoFill": "export function CartSummary({ items }) {\n  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)\n  const deliveryFee = 2.5\n  return (\n    <section className=\"cart-summary\">\n      <h2>Your order</h2>\n      <p>Subtotal: ${subtotal.toFixed(2)}</p>\n      <p>Delivery fee: ${deliveryFee.toFixed(2)}</p>\n      <p>Total: ${subtotal + deliveryFee}</p>\n    </section>\n  )\n}\n",
+      "hint": "Copy the line from the ticket exactly, on a new line before the closing section tag."
+    },
+    {
+      "id": "commit-change",
+      "role": "frontend",
+      "kind": "git",
+      "prompt": "Save your change as a commit, with a message that says what changed.",
+      "hint": "Run git add . and then git commit -m followed by a message in quotes, for example \"ORD-17 Show order total with delivery fee\".",
+      "check": {
+        "type": "branchHasCommit"
+      },
+      "autoFill": "git add .\ngit commit -m \"ORD-17 Show order total with delivery fee\"",
+      "terms": [
+        "commit"
+      ]
+    },
+    {
+      "id": "sync-push",
+      "role": "frontend",
+      "kind": "syncCheck",
+      "prompt": "Pull again before you push, in case a teammate changed something while you worked.",
+      "hint": "The command is git pull origin main.",
+      "check": {
+        "type": "syncResolved",
+        "phase": "push"
+      },
+      "autoFill": "git pull origin main",
+      "terms": [
+        "pull"
+      ]
+    },
+    {
+      "id": "push-branch",
+      "role": "frontend",
+      "kind": "git",
+      "prompt": "Push your branch to GitHub so the team can see it.",
+      "hint": "The command is git push -u origin followed by your branch name.",
+      "check": {
+        "type": "pushed"
+      },
+      "autoFill": "git push -u origin {branch}",
+      "terms": [
+        "push",
+        "remote-origin"
+      ],
+      "stationEvent": {
+        "station": "github",
+        "status": "active",
+        "packageFrom": "dev"
+      }
+    },
+    {
+      "id": "raise-pr",
+      "role": "frontend",
+      "kind": "pr",
+      "prompt": "Raise a pull request asking your teammates to review your branch.",
+      "hint": "Give it a title that matches the ticket.",
+      "check": {
+        "type": "prRaised"
+      },
+      "autoFill": "ORD-17 Show order total with delivery fee",
+      "terms": [
+        "pull-request"
+      ]
+    },
+    {
+      "id": "run-tests",
+      "role": "qa",
+      "kind": "tests",
+      "prompt": "Automated tests run on your pull request. Watch the result in the pull request tab.",
+      "auto": {
+        "type": "runTests"
+      },
+      "check": {
+        "type": "testsRan"
+      },
+      "terms": [
+        "automated-tests"
+      ]
+    },
+    {
+      "id": "read-the-log",
+      "role": "frontend",
+      "kind": "chat",
+      "prompt": "Your tests failed. Sam from QA asks what you will do first. Choose a reply.",
+      "chat": {
+        "id": "tests-failed",
+        "from": {
+          "name": "Sam Okafor",
+          "role": "qa"
+        },
+        "message": "Checks failed on pull request #1. What are you going to do first?",
+        "replies": [
+          {
+            "id": "read-log",
+            "text": "Open the test log and read which test failed.",
+            "response": "Good. The log names the failing test and what it expected. Read it before you change anything."
+          },
+          {
+            "id": "rerun",
+            "text": "Run the tests again and see if they pass.",
+            "response": "The same code gives the same result, so a rerun will fail again. The log says what is wrong. Read it first.",
+            "mistake": "ignored-failing-tests"
+          },
+          {
+            "id": "approve",
+            "text": "Ask Dana to approve it anyway.",
+            "response": "Merging is blocked while checks fail, and a reviewer should not approve red tests. Read the log and fix the code first.",
+            "mistake": "ignored-failing-tests"
+          }
+        ]
+      },
+      "check": {
+        "type": "chatDone",
+        "chatId": "tests-failed"
+      },
+      "autoFill": "read-log",
+      "terms": [
+        "automated-tests"
+      ]
+    },
+    {
+      "id": "fix-total",
+      "role": "frontend",
+      "kind": "code",
+      "prompt": "The total must show two decimals, the same as the other lines. Change the Total line so it uses .toFixed(2).",
+      "check": {
+        "type": "fileContains",
+        "path": "src/components/CartSummary.jsx",
+        "includes": "(subtotal + deliveryFee).toFixed(2)"
+      },
+      "autoFill": "export function CartSummary({ items }) {\n  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)\n  const deliveryFee = 2.5\n  return (\n    <section className=\"cart-summary\">\n      <h2>Your order</h2>\n      <p>Subtotal: ${subtotal.toFixed(2)}</p>\n      <p>Delivery fee: ${deliveryFee.toFixed(2)}</p>\n      <p>Total: ${(subtotal + deliveryFee).toFixed(2)}</p>\n    </section>\n  )\n}\n",
+      "hint": "Wrap the sum in brackets and call .toFixed(2) on it: (subtotal + deliveryFee).toFixed(2).",
+      "stationEvent": {
+        "station": "dev",
+        "status": "active",
+        "packageFrom": "tests"
+      }
+    },
+    {
+      "id": "commit-fix",
+      "role": "frontend",
+      "kind": "git",
+      "prompt": "Commit the fix as a second commit, with a message that says what it fixes.",
+      "hint": "Run git add . and then git commit -m followed by a message in quotes, for example \"ORD-17 Show the total with two decimals\".",
+      "check": {
+        "type": "branchHasCommit",
+        "minCount": 2
+      },
+      "autoFill": "git add .\ngit commit -m \"ORD-17 Show the total with two decimals\"",
+      "terms": [
+        "commit"
+      ]
+    },
+    {
+      "id": "sync-push-fix",
+      "role": "frontend",
+      "kind": "syncCheck",
+      "prompt": "You committed again, so pull again before you push.",
+      "hint": "The command is git pull origin main.",
+      "check": {
+        "type": "syncResolved",
+        "phase": "push"
+      },
+      "autoFill": "git pull origin main",
+      "terms": [
+        "pull"
+      ]
+    },
+    {
+      "id": "push-fix",
+      "role": "frontend",
+      "kind": "git",
+      "prompt": "Push your branch to GitHub so the team can see it.",
+      "hint": "The command is git push -u origin followed by your branch name.",
+      "check": {
+        "type": "pushed"
+      },
+      "autoFill": "git push -u origin {branch}",
+      "terms": [
+        "push",
+        "remote-origin"
+      ],
+      "stationEvent": {
+        "station": "github",
+        "status": "active",
+        "packageFrom": "dev"
+      }
+    },
+    {
+      "id": "run-tests-again",
+      "role": "qa",
+      "kind": "tests",
+      "prompt": "Pushing again re-runs the automated tests. Watch the result.",
+      "auto": {
+        "type": "runTests"
+      },
+      "check": {
+        "type": "testsPassed"
+      },
+      "terms": [
+        "automated-tests"
+      ]
+    },
+    {
+      "id": "answer-reviewer",
+      "role": "frontend",
+      "kind": "chat",
+      "prompt": "The tests pass now. Dana, the reviewer, left a comment on your pull request. Answer it.",
+      "chat": {
+        "id": "review-comment",
+        "from": {
+          "name": "Dana Whitfield",
+          "role": "reviewer"
+        },
+        "message": "The tests pass now. Before I approve: why did the first version fail? A short note helps the next person who touches this.",
+        "replies": [
+          {
+            "id": "explain",
+            "text": "The first version printed 13 instead of 13.00. I used toFixed(2), like the other lines.",
+            "response": "Clear. Thank you for writing it down. I will approve now."
+          },
+          {
+            "id": "small",
+            "text": "It was a small fix. No note needed.",
+            "response": "Small fixes still teach the team something. I will approve this time. A line about what went wrong helps the next person.",
+            "mistake": "dismissed-review"
+          },
+          {
+            "id": "picky",
+            "text": "The test was too picky.",
+            "response": "The test asks for the same format as every other money value on the page. That is a fair rule. I will approve now.",
+            "mistake": "dismissed-review"
+          }
+        ]
+      },
+      "check": {
+        "type": "chatDone",
+        "chatId": "review-comment"
+      },
+      "autoFill": "explain",
+      "terms": [
+        "code-review"
+      ]
+    },
+    {
+      "id": "review",
+      "role": "reviewer",
+      "kind": "review",
+      "prompt": "A teammate reads the change and approves it.",
+      "auto": {
+        "type": "approvePr"
+      },
+      "check": {
+        "type": "prApproved"
+      },
+      "terms": [
+        "code-review"
+      ],
+      "stationEvent": {
+        "station": "github",
+        "status": "pass"
+      }
+    },
+    {
+      "id": "merge-pr",
+      "role": "frontend",
+      "kind": "pr",
+      "prompt": "Tests passed and the change is approved. Merge the pull request into main.",
+      "check": {
+        "type": "prMerged"
+      },
+      "autoFill": "merge",
+      "terms": [
+        "merge"
+      ],
+      "stationEvent": {
+        "station": "live",
+        "status": "active",
+        "packageFrom": "tests"
+      }
+    },
+    {
+      "id": "release",
+      "role": "pm",
+      "kind": "deploy",
+      "prompt": "The merged change is released to the live app.",
+      "auto": {
+        "type": "deploy"
+      },
+      "check": {
+        "type": "deployed"
+      },
+      "terms": [
+        "deploy"
+      ],
+      "stationEvent": {
+        "station": "live",
+        "status": "pass"
+      }
+    }
+  ],
+  "replay": [
+    {
+      "mistake": "skipped-start-pull",
+      "you": "You started work without pulling the latest main.",
+      "result": "On a real team your branch would miss Marcus's change (the delivery fee line in the cart summary). Your pull request would show as out of date, and the gap grows with every hour you wait."
+    },
+    {
+      "mistake": "branch-behind-main",
+      "you": "You created your branch from an out-of-date copy of main.",
+      "result": "Your work starts from old code. Reviewers see a branch that does not match main, and merging it gets harder the longer it stays that way."
+    },
+    {
+      "mistake": "unclear-branch-name",
+      "you": "You named your branch something that does not point to the ticket.",
+      "result": "Teammates cannot tell what the branch is for, and nobody can find it from ORD-17."
+    },
+    {
+      "mistake": "committed-on-main",
+      "you": "You committed your change directly on main.",
+      "result": "Your change would skip review. Anyone who pulls main would get half-finished work."
+    },
+    {
+      "mistake": "vague-commit-message",
+      "you": "You wrote a commit message that does not say what changed.",
+      "result": "Months later nobody can tell why that line changed without opening the code, and searching the history finds nothing."
+    },
+    {
+      "mistake": "skipped-prepush-pull",
+      "you": "You pushed without pulling first.",
+      "result": "If a teammate had pushed to the same branch in the meantime, Git would have rejected your push and you would have had to untangle it afterwards."
+    },
+    {
+      "mistake": "pushed-to-main",
+      "you": "You pushed straight to main.",
+      "result": "The live app would be built from code that nobody reviewed and no test ran on, so a typo could break the app for every customer."
+    },
+    {
+      "mistake": "pr-out-of-date",
+      "you": "You raised a pull request from an out-of-date branch.",
+      "result": "GitHub would show \"This branch is out-of-date with the base branch\", and your reviewer would wait for you to update it before they could trust the result."
+    },
+    {
+      "mistake": "ignored-failing-tests",
+      "you": "You tried to rerun the tests, or get the pull request approved, before reading the failing test.",
+      "result": "The same code gives the same red result, so a rerun only wastes time. Asking for approval on red tests puts your reviewer in an awkward spot, and GitHub blocks the merge anyway."
+    },
+    {
+      "mistake": "dismissed-review",
+      "you": "You brushed off the reviewer's question instead of answering it.",
+      "result": "Reviewers stop asking when answers feel like a nuisance. The next person to hit the same bug gets no note about it, and the team repeats the mistake."
+    }
+  ]
+}

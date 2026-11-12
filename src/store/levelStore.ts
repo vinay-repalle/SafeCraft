@@ -6,10 +6,11 @@
 // It is NOT saved to localStorage: a level run lives in memory, so a reload starts the
 // level again. Only the result (level completed, terms seen) goes into the saved progress.
 import { create } from 'zustand'
-import { getLevel } from '../content'
+import { getLevel, type PlayableRole } from '../content'
 import { LevelRunner, type RunnerSnapshot } from '../engine/levelRunner'
 import { GitSim } from '../engine/gitSim'
-import { STATIONS, type Action, type ActionResult, type Station, type Step } from '../engine/types'
+import { STATIONS, type Action, type ActionResult, type Level, type Station, type Step } from '../engine/types'
+import type { Role } from './types'
 import { useProgressStore } from './progressStore'
 import { describeEvent, type FeedItem } from './teamFeed'
 
@@ -23,6 +24,8 @@ export type Popup =
 
 type LevelState = {
   levelId: number
+  // Whose seat you are in: each level is written once for the frontend developer and once for the backend developer.
+  playRole: PlayableRole
   runner: LevelRunner | null
   snapshot: RunnerSnapshot | null
   chat: ChatLine[]
@@ -37,7 +40,10 @@ type LevelState = {
   // A gentle warning or error from the last action, shown on the step card.
   notice: string | null
 
-  load: (levelId: number, options?: { skipRecap?: boolean }) => void
+  // True while a teammate is working in the same code and the level is about a merge conflict, so the 3D scene shows a second developer.
+  teammateActive: boolean
+
+  load: (levelId: number, options?: { skipRecap?: boolean; role?: PlayableRole }) => void
   act: (action: Action) => ActionResult
   autoFill: () => void
   runCommand: (command: string) => ActionResult
@@ -49,6 +55,13 @@ type LevelState = {
 }
 
 const FEED_LIMIT = 40
+
+// Which role a teammate's scripted push belongs to. Levels may say; otherwise it is the other
+// seat, so a frontend learner's teammate is a backend developer.
+function teammateRole(level: Level, message: string): Role {
+  const pushes = [...(level.scenario.remoteCommits ?? []), ...level.steps.flatMap((s) => (s.after?.remoteCommit ? [s.after.remoteCommit] : []))]
+  return pushes.find((c) => c.message === message)?.role ?? (level.perspective === 'backend' ? 'frontend' : 'backend')
+}
 
 const idleStations = (): Record<Station, StationState> =>
   Object.fromEntries(STATIONS.map((s) => [s, 'idle'])) as Record<Station, StationState>
@@ -76,8 +89,8 @@ export const useLevelStore = create<LevelState>()((set, get) => {
 
   const handleEvent = (runner: LevelRunner) => (event: Parameters<Parameters<LevelRunner['events']['on']>[0]>[0]) => {
     // Team view: whoever owns the current step is the one acting when this event fires.
-    const actor = runner.currentStep()?.role ?? 'frontend'
-    const line = describeEvent(event, actor)
+    const actor = runner.currentStep()?.role ?? runner.level.perspective ?? 'frontend'
+    const line = describeEvent(event, actor, event.type === 'git:remote-commit' ? teammateRole(runner.level, event.message) : undefined)
     if (line) set((s) => ({ feed: [...s.feed, { ...line, id: nextId() }].slice(-FEED_LIMIT) }))
 
     switch (event.type) {
@@ -112,6 +125,13 @@ export const useLevelStore = create<LevelState>()((set, get) => {
         })
         break
       }
+      case 'git:remote-commit':
+        // Only levels about a conflict show the second developer: that is the lesson there.
+        if (runner.level.steps.some((st) => st.check?.type === 'conflict')) set({ teammateActive: true })
+        break
+      case 'git:pull':
+        set({ teammateActive: false })
+        break
       case 'mistake': {
         // Gentle mode: a warning, no penalty. The full explanation comes in the replay.
         const rule = runner.level.replay.find((r) => r.mistake === event.id)
@@ -119,7 +139,7 @@ export const useLevelStore = create<LevelState>()((set, get) => {
         break
       }
       case 'level:complete':
-        useProgressStore.getState().markLevelCompleted(event.levelId, 'frontend')
+        useProgressStore.getState().markLevelCompleted(event.levelId, runner.level.perspective === 'backend' ? 'backend' : 'frontend')
         set({ popup: { type: 'replay' } })
         break
     }
@@ -132,8 +152,15 @@ export const useLevelStore = create<LevelState>()((set, get) => {
     else get().act(pending)
   }
 
+  // A pull that stops on a conflict is not a mistake to retry inside the popup. Close it, say what
+  // happened, and let the learner fix the file in the editor.
+  const stoppedOnConflict = (runner: LevelRunner) => runner.snapshot().git.conflicts.length > 0
+  const CONFLICT_NOTICE = 'Git stopped on a merge conflict. Open the marked file, fix it, then commit.'
+
   return {
     levelId: 1,
+    playRole: 'frontend' as PlayableRole,
+    teammateActive: false,
     runner: null,
     snapshot: null,
     chat: [],
@@ -146,12 +173,15 @@ export const useLevelStore = create<LevelState>()((set, get) => {
     notice: null,
 
     load: (levelId, options) => {
-      const level = getLevel(levelId)
+      const role = options?.role ?? get().playRole
+      const level = getLevel(levelId, role)
       if (!level) return
       unsubscribe?.()
       const runner = new LevelRunner(level)
       set({
         levelId,
+        playRole: role,
+        teammateActive: false,
         runner,
         snapshot: runner.snapshot(),
         chat: [],
@@ -219,6 +249,8 @@ export const useLevelStore = create<LevelState>()((set, get) => {
       if (result.ok && runner.snapshot().sync[popup.phase] !== null) {
         set({ popup: null })
         resume(popup.pending)
+      } else if (stoppedOnConflict(runner)) {
+        set({ popup: null, notice: CONFLICT_NOTICE })
       } else {
         set({ popup: { ...popup, output: result.message } })
       }
@@ -230,6 +262,10 @@ export const useLevelStore = create<LevelState>()((set, get) => {
       const result = runner.act({ type: 'syncCheck', phase: popup.phase, choice })
       if (choice === 'auto') logCommand('git pull origin main', result)
       set({ snapshot: runner.snapshot() })
+      if (!result.ok && stoppedOnConflict(runner)) {
+        set({ popup: null, notice: CONFLICT_NOTICE })
+        return
+      }
       if (!result.ok) {
         set({ popup: { ...popup, output: result.message } })
         return

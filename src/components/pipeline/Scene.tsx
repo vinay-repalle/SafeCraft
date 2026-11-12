@@ -130,7 +130,7 @@ function Diorama({ labels }: { labels: LabelRefs }) {
   const invalidate = useThree((s) => s.invalidate)
   const stations = useLevelStore((s) => s.stations)
   const packageAt = useLevelStore((s) => s.packageAt)
-  const conflict = useLevelStore((s) => (s.snapshot?.git.conflicts.length ?? 0) > 0)
+  const conflict = useLevelStore((s) => s.teammateActive || (s.snapshot?.git.conflicts.length ?? 0) > 0)
 
   const layout = layoutForAspect(size.width / Math.max(size.height, 1))
   const positions = stationPositions(layout)

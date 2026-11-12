@@ -31,7 +31,8 @@ export type StepKind = (typeof STEP_KINDS)[number]
 
 // Things that can go wrong, in the learner's terms. Each one a level can trigger needs
 // a ReplayRule that says what it would have caused on a real team.
-export const MISTAKE_IDS = [
+// The engine notices these in every level, so every level must explain them in its replay.
+export const GENERAL_MISTAKE_IDS = [
   'skipped-start-pull',
   'branch-behind-main',
   'unclear-branch-name',
@@ -41,6 +42,17 @@ export const MISTAKE_IDS = [
   'pushed-to-main',
   'pr-out-of-date',
 ] as const
+// Added in Phase 5. A chat reply can trigger these (`mistake` on the reply), and the engine
+// notices committed-conflict-markers itself. A level only needs a replay rule for the ones
+// it can actually trigger.
+export const LEVEL_MISTAKE_IDS = [
+  'unagreed-contract',
+  'ignored-failing-tests',
+  'dismissed-review',
+  'overwrote-teammate',
+  'committed-conflict-markers',
+] as const
+export const MISTAKE_IDS = [...GENERAL_MISTAKE_IDS, ...LEVEL_MISTAKE_IDS] as const
 export type MistakeId = (typeof MISTAKE_IDS)[number]
 
 // Client-side validator: "is this step done?" answered purely from simulated state.
@@ -57,6 +69,10 @@ export type RuleCheck =
   | { type: 'prMerged' }
   | { type: 'deployed' }
   | { type: 'chatDone'; chatId: string }
+  // Added in Phase 5.
+  | { type: 'testsRan' } // the automated tests have run at least once, pass or fail
+  | { type: 'conflict' } // a merge has stopped on conflicts
+  | { type: 'conflictResolved' } // no merge is waiting to be finished
 
 // Steps performed by the engine on behalf of observe-only roles (CI, reviewer, CD).
 export type AutoAction = { type: 'runTests' } | { type: 'approvePr' } | { type: 'deploy' }
@@ -66,7 +82,15 @@ export type ChatScript = {
   id: string
   from: { name: string; role: Role }
   message: string
-  replies: { id: string; text: string; response: string }[]
+  // `mistake` (added in Phase 5): choosing this reply counts as that mistake in Mistakes Replay.
+  replies: { id: string; text: string; response: string; mistake?: MistakeId }[]
+}
+
+// Added in Phase 5: things a teammate or the project manager does right after a step
+// completes, so a level can change under the learner's feet.
+export type StepAfter = {
+  remoteCommit?: RemoteCommit // a teammate pushes to origin
+  ticketUpdate?: { ticketId: string; title?: string; description?: string } // the project manager edits a ticket
 }
 
 export type Step = {
@@ -88,6 +112,7 @@ export type Step = {
   chat?: ChatScript // added in Phase 2
   auto?: AutoAction // added in Phase 2: the engine does this step itself
   hint?: string // added in Phase 2: text behind the Hint button
+  after?: StepAfter // added in Phase 5
 }
 
 // What to tell the learner afterwards: this mistake => this real-world result.
@@ -97,6 +122,7 @@ export type ReplayRule = { mistake: MistakeId; you: string; result: string }
 // local copy begins out of date and "pull before you start" actually matters.
 export type RemoteCommit = {
   author: string
+  role?: Role // added in Phase 5: which role the teammate has, for Team view. Defaults to the learner's opposite.
   message: string
   branch: string
   changes: Record<string, string | null> // path -> new content, null deletes
@@ -104,6 +130,9 @@ export type RemoteCommit = {
 
 export type Level = {
   id: number
+  // Added in Phase 5: whose seat the learner sits in. Each level has a frontend and a backend
+  // version, written as two files. Defaults to 'frontend'.
+  perspective?: Role
   title: string
   whyItExists: string
   recap: string
