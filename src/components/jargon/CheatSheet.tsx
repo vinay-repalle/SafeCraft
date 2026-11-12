@@ -1,9 +1,12 @@
-import { Download } from 'lucide-react'
+import { Download, Play } from 'lucide-react'
+import { useState } from 'react'
 import { jargon } from '../../content'
+import { TERM_ANIMATIONS } from '../../content/termAnimations'
 import { useProgressStore } from '../../store/progressStore'
 import { cheatSheetFileName, cheatSheetMarkdownBlob, cheatSheetPdfBlob, metTerms } from '../../utils/cheatSheet'
 import { dateStamp, downloadBlob } from '../../utils/download'
 import { Dialog } from '../popups/Dialog'
+import { AnimatedSketch } from '../sketch/Sketch'
 import { PANEL_BUTTON } from '../ui'
 import { GuideLink } from './GuideLink'
 
@@ -14,6 +17,8 @@ export function CheatSheet({ open, onClose }: Props) {
   const seen = useProgressStore((s) => s.seenTerms)
   const met = metTerms(jargon, seen)
   const stamp = dateStamp()
+  // Which term's animation is open. One at a time keeps the list calm.
+  const [watching, setWatching] = useState<string | null>(null)
 
   return (
     <Dialog open={open} onClose={onClose} labelledBy="cheat-title">
@@ -30,6 +35,24 @@ export function CheatSheet({ open, onClose }: Props) {
               <p className="mt-1 text-caption text-ink-2">{t.meaning}</p>
               {t.command && <code className="mt-2 block rounded-tag bg-raised px-2 py-1 font-mono text-meta">{t.command}</code>}
               {t.shortcut && <p className="mt-1 text-meta text-ink-3">Shortcut: {t.shortcut}</p>}
+              {TERM_ANIMATIONS[t.id] && (
+                <>
+                  <button
+                    type="button"
+                    aria-expanded={watching === t.id}
+                    onClick={() => setWatching(watching === t.id ? null : t.id)}
+                    className="mt-2 flex h-6 items-center gap-1 rounded-tag px-1 text-meta text-ink-2 transition-colors hover:bg-raised hover:text-ink"
+                  >
+                    <Play size={16} strokeWidth={1.5} aria-hidden />
+                    {watching === t.id ? 'Hide animation' : 'Watch it'}
+                  </button>
+                  {watching === t.id && (
+                    <div className="mt-2">
+                      <AnimatedSketch sketch={TERM_ANIMATIONS[t.id]} />
+                    </div>
+                  )}
+                </>
+              )}
               <GuideLink slug={t.guide} onNavigate={onClose} />
             </li>
           ))}

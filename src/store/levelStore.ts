@@ -8,7 +8,7 @@
 import { create } from 'zustand'
 import { getLevel, type PlayableRole } from '../content'
 import { LevelRunner, type RunnerSnapshot } from '../engine/levelRunner'
-import { GitSim } from '../engine/gitSim'
+import { GitSim, type GitEvent, type GraphState } from '../engine/gitSim'
 import { STATIONS, type Action, type ActionResult, type Level, type Station, type Step } from '../engine/types'
 import type { Role } from './types'
 import { useProgressStore } from './progressStore'
@@ -40,6 +40,11 @@ type LevelState = {
   // A gentle warning or error from the last action, shown on the step card.
   notice: string | null
 
+  // The most recent action that changed the repository (Phase 7a): the Git events it caused and
+  // the repository as it was just before, so the Git graph can show what moved and from where.
+  // `seq` goes up with each change, so the graph knows when to play its animation.
+  gitChange: GitChange
+
   // True while a teammate is working in the same code and the level is about a merge conflict, so the 3D scene shows a second developer.
   teammateActive: boolean
 
@@ -54,6 +59,8 @@ type LevelState = {
   restart: () => void
 }
 
+export type GitChange = { seq: number; events: GitEvent[]; before: GraphState | null }
+
 const FEED_LIMIT = 40
 
 // Which role a teammate's scripted push belongs to. Levels may say; otherwise it is the other
@@ -66,7 +73,13 @@ function teammateRole(level: Level, message: string): Role {
 const idleStations = (): Record<Station, StationState> =>
   Object.fromEntries(STATIONS.map((s) => [s, 'idle'])) as Record<Station, StationState>
 
+const isGitEvent = (e: { type: string }): e is GitEvent => e.type.startsWith('git:') || e.type.startsWith('github:')
+
 let unsubscribe: (() => void) | null = null
+// While an action runs, its Git events collect here and are published together when it ends.
+// null means no action is running (for example, events fired while a level loads).
+let actionGit: GitEvent[] | null = null
+let actionBefore: GraphState | null = null
 let seq = 0
 const nextId = () => ++seq
 
@@ -92,6 +105,10 @@ export const useLevelStore = create<LevelState>()((set, get) => {
     const actor = runner.currentStep()?.role ?? runner.level.perspective ?? 'frontend'
     const line = describeEvent(event, actor, event.type === 'git:remote-commit' ? teammateRole(runner.level, event.message) : undefined)
     if (line) set((s) => ({ feed: [...s.feed, { ...line, id: nextId() }].slice(-FEED_LIMIT) }))
+    if (isGitEvent(event)) {
+      if (actionGit) actionGit.push(event)
+      else set((s) => ({ gitChange: { seq: s.gitChange.seq + 1, events: [event], before: null } }))
+    }
 
     switch (event.type) {
       case 'step:active': {
@@ -145,6 +162,23 @@ export const useLevelStore = create<LevelState>()((set, get) => {
     }
   }
 
+  // Runs one learner action and publishes the Git events it caused as one change. An action
+  // that runs another (a Sync Check resuming the held-back action) joins the outer one.
+  const tracked = <T,>(fn: () => T): T => {
+    if (actionGit) return fn()
+    actionGit = []
+    actionBefore = get().runner?.git.graphState() ?? null
+    try {
+      return fn()
+    } finally {
+      const events = actionGit
+      const before = actionBefore
+      actionGit = null
+      actionBefore = null
+      if (events.length) set((s) => ({ gitChange: { seq: s.gitChange.seq + 1, events, before } }))
+    }
+  }
+
   // After a sync gate is cleared, do the thing the learner originally asked for.
   const resume = (pending: Action | null) => {
     if (!pending) return
@@ -171,6 +205,7 @@ export const useLevelStore = create<LevelState>()((set, get) => {
     feed: [],
     popup: null,
     notice: null,
+    gitChange: { seq: 0, events: [], before: null },
 
     load: (levelId, options) => {
       const role = options?.role ?? get().playRole
@@ -190,6 +225,7 @@ export const useLevelStore = create<LevelState>()((set, get) => {
         packageAt: 'client',
         packageFrom: null,
         feed: [],
+        gitChange: { seq: get().gitChange.seq + 1, events: [], before: null },
         popup: options?.skipRecap ? null : { type: 'recap' },
         notice: null,
       })
@@ -199,7 +235,7 @@ export const useLevelStore = create<LevelState>()((set, get) => {
       if (first?.chat) set({ chat: [{ id: nextId(), speaker: first.chat.from.name, side: 'them', text: first.chat.message }] })
     },
 
-    act: (action) => {
+    act: (action) => tracked(() => {
       const { runner } = get()
       if (!runner) return { ok: false, message: 'No level is loaded.' }
       set({ notice: null })
@@ -215,12 +251,12 @@ export const useLevelStore = create<LevelState>()((set, get) => {
       else if (!result.ok) set({ notice: result.message })
       set({ snapshot: runner.snapshot() })
       return result
-    },
+    }),
 
     // The terminal and the Git buttons both go through here, so what you see is what ran.
     runCommand: (command) => get().act({ type: 'git', command }),
 
-    autoFill: () => {
+    autoFill: () => tracked(() => {
       const { runner } = get()
       if (!runner) return
       const step: Step | null = runner.currentStep()
@@ -234,9 +270,9 @@ export const useLevelStore = create<LevelState>()((set, get) => {
       else if (step?.kind === 'syncCheck' && step.autoFill) logCommand(step.autoFill, result)
       else if (!result.ok) set({ notice: result.message })
       set({ snapshot: runner.snapshot() })
-    },
+    }),
 
-    submitSyncCommand: (command) => {
+    submitSyncCommand: (command) => tracked(() => {
       const { runner, popup } = get()
       if (!runner || popup?.type !== 'sync') return
       if (GitSim.classify(command) !== 'pull') {
@@ -254,9 +290,9 @@ export const useLevelStore = create<LevelState>()((set, get) => {
       } else {
         set({ popup: { ...popup, output: result.message } })
       }
-    },
+    }),
 
-    syncChoice: (choice) => {
+    syncChoice: (choice) => tracked(() => {
       const { runner, popup } = get()
       if (!runner || popup?.type !== 'sync') return
       const result = runner.act({ type: 'syncCheck', phase: popup.phase, choice })
@@ -272,7 +308,7 @@ export const useLevelStore = create<LevelState>()((set, get) => {
       }
       set({ popup: null })
       resume(popup.pending)
-    },
+    }),
 
     openReplay: () => set({ popup: { type: 'replay' } }),
     closePopup: () => set({ popup: null }),

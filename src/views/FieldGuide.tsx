@@ -1,7 +1,9 @@
 import { Check } from 'lucide-react'
 import { useEffect } from 'react'
 import { GuideBody } from '../components/guide/GuideBody'
+import { Sketch } from '../components/sketch/Sketch'
 import { PANEL } from '../components/ui'
+import { GUIDE_DIAGRAMS } from '../content/guideDiagrams'
 import { findGuide, guides } from '../content/guides'
 import { useProgressStore } from '../store/progressStore'
 import { useUiStore } from '../store/uiStore'
@@ -63,6 +65,13 @@ export function FieldGuide() {
           <h2 id="guide-title" className="mt-1 text-display font-medium">
             {current.title}
           </h2>
+          {/* Phase 7d: one still diagram per article, drawn from data in guideDiagrams.ts. */}
+          {GUIDE_DIAGRAMS[current.slug] && (
+            <figure className="mt-4 rounded-card border border-line bg-card p-4">
+              <Sketch sketch={GUIDE_DIAGRAMS[current.slug]} />
+              <figcaption className="mt-2 text-caption text-ink-2">{GUIDE_DIAGRAMS[current.slug].caption}</figcaption>
+            </figure>
+          )}
           <div className="mt-4">
             <GuideBody blocks={current.blocks} />
           </div>

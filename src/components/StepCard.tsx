@@ -1,8 +1,10 @@
-import { ArrowRight, FastForward, Lightbulb } from 'lucide-react'
-import { useState } from 'react'
+import { ArrowRight, Check, FastForward, Lightbulb } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { ROLE_INFO } from '../app/nav'
 import { LEVEL_IDS } from '../content'
+import type { LevelRunner } from '../engine/levelRunner'
 import { useCurrentStep, useLevelStore } from '../store/levelStore'
+import { doneLabel, justCompleted } from '../utils/stepFeedback'
 import { FirstTimeCard } from './jargon/TermCard'
 import { JargonText } from './jargon/JargonText'
 import { BUTTON_PRIMARY, PANEL_BUTTON } from './ui'
@@ -20,18 +22,48 @@ export function StepCard() {
   const step = useCurrentStep()
   // Remember which step's hint is open, so it closes by itself when the step changes.
   const [hintFor, setHintFor] = useState<string | null>(null)
+
+  // Phase 7e: when steps complete, their bars grow in and a short "Step N done" line rises in,
+  // once. `seen` remembers what was done last time; it resets when another level or seat loads.
+  const seen = useRef<{ runner: LevelRunner; ids: string[] } | null>(null)
+  const [done, setDone] = useState<{ key: number; label: string; ids: string[] } | null>(null)
+  const completedIds = snapshot?.completedStepIds
+  useEffect(() => {
+    if (!runner || !completedIds) return
+    const prev = seen.current?.runner === runner ? seen.current.ids : null
+    seen.current = { runner, ids: completedIds }
+    if (prev === null) {
+      setDone(null)
+      return
+    }
+    const order = runner.level.steps.map((s) => s.id)
+    const numbers = justCompleted(prev, completedIds, order)
+    if (numbers.length) setDone((d) => ({ key: (d?.key ?? 0) + 1, label: doneLabel(numbers), ids: numbers.map((n) => order[n - 1]) }))
+  }, [runner, completedIds])
+
   if (!runner || !snapshot) return null
 
   const total = runner.level.steps.length
-  const done = snapshot.completedStepIds.length
+  const doneCount = snapshot.completedStepIds.length
 
   return (
     <div className="rounded-tag border border-line bg-raised p-4">
-      <ol aria-label={`${done} of ${total} steps done`} className="mb-3 flex gap-1">
+      <ol aria-label={`${doneCount} of ${total} steps done`} className="mb-3 flex gap-1">
         {runner.level.steps.map((s) => (
-          <li key={s.id} className={`h-1 flex-1 rounded-tag ${snapshot.completedStepIds.includes(s.id) ? 'bg-accent' : s.id === step?.id ? 'bg-ink-3' : 'bg-line'}`} />
+          <li
+            key={s.id}
+            className={`h-1 flex-1 rounded-tag ${snapshot.completedStepIds.includes(s.id) ? 'bg-accent' : s.id === step?.id ? 'bg-ink-3' : 'bg-line'} ${done?.ids.includes(s.id) ? 'motion-grow-x' : ''}`}
+          />
         ))}
       </ol>
+
+      {done && (
+        // Keyed by each completion, so the line rises in once per completion and then stays still.
+        <p key={done.key} role="status" className="motion-rise mb-2 flex items-center gap-1 text-meta text-pass">
+          <Check size={16} strokeWidth={1.5} aria-hidden />
+          {done.label}
+        </p>
+      )}
 
       {!step ? (
         <>
@@ -55,7 +87,7 @@ export function StepCard() {
       ) : (
         <>
           <p className="text-meta text-ink-3">
-            Step {done + 1} of {total}
+            Step {doneCount + 1} of {total}
             {step.auto ? ' · Runs on its own' : ''}
             {` · ${ROLE_INFO.find((r) => r.id === step.role)?.label}`}
           </p>

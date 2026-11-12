@@ -258,6 +258,8 @@ Six phases, each ending in something you can open in the browser and test, so yo
 
 The phases run in order; Level 1 is built and polished first as the demo.
 
+**Phase 7 (added after the v1 deploy): visual learning.** More visuals so concepts are seen, not only read: a live Git graph, a conflict resolver, short jargon animations, Field Guide diagrams, then a 3D ticket journey, pipeline upgrades, a 3D level map and a conflict scene. Details and order are in `docs/TRACKER.md`. Motion rules are in `docs/DESIGN.md`.
+
 **How we work each phase**
 
 1. Claude writes or edits the files for one small step and lists what changed.

@@ -71,7 +71,12 @@ function SyncBody({ phase, output }: { phase: 'start' | 'push'; output: string |
       </form>
 
       {hint && hintText && <p className="mt-2 text-caption text-ink-2">{hintText}</p>}
-      {output && <pre className="mt-3 whitespace-pre-wrap rounded-tag bg-raised p-3 font-mono text-meta text-ink-2">{output}</pre>}
+      {/* Phase 7e: each new result fades in once, so a second try visibly changes the box. */}
+      {output && (
+        <pre key={output} className="motion-fade mt-3 whitespace-pre-wrap rounded-tag bg-raised p-3 font-mono text-meta text-ink-2">
+          {output}
+        </pre>
+      )}
 
       <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-line pt-4">
         <button type="button" className={PANEL_BUTTON} onClick={() => setHint(!hint)}>

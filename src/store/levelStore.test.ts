@@ -231,4 +231,31 @@ describe('levelStore: levels and roles', () => {
     for (let i = 0; i < 60 && level().snapshot?.currentStepId !== 'update-endpoint'; i++) level().autoFill()
     expect(level().feed.find((f) => f.text.startsWith('Pushed to main'))).toMatchObject({ actor: 'frontend', notifies: ['backend'] })
   })
+  it('groups the Git events of one action into a change, with the repository from before it', () => {
+    level().load(4, { skipRecap: true, role: 'frontend' })
+    const startSeq = level().gitChange.seq
+    // Typing in the editor is not a Git change.
+    level().act({ type: 'editFile', path: 'src/components/CartSummary.jsx', content: 'x' })
+    expect(level().gitChange.seq).toBe(startSeq)
+
+    for (let i = 0; i < 60 && level().snapshot?.currentStepId !== 'create-branch'; i++) level().autoFill()
+    level().autoFill() // git checkout -b
+    expect(level().gitChange.events.map((e) => e.type)).toEqual(['git:branch-created', 'git:checkout'])
+    expect(level().gitChange.before?.head).toBe('main')
+
+    for (let i = 0; i < 60 && level().snapshot?.currentStepId !== 'pull-main'; i++) level().autoFill()
+    level().autoFill() // the pull that stops on the conflict
+    expect(level().gitChange.events).toEqual([expect.objectContaining({ type: 'git:pull', result: 'conflict' })])
+    expect(level().runner!.git.graphState().merge?.conflicts).toEqual(['src/components/CartSummary.jsx'])
+  })
+
+  it('ends a full Level 4 run with your merge commit in the Git graph', async () => {
+    const { buildGitGraph } = await import('../engine/gitGraph')
+    level().load(4, { skipRecap: true, role: 'frontend' })
+    for (let i = 0; i < 80 && !level().snapshot?.finished; i++) level().autoFill()
+    const graph = buildGitGraph(level().runner!.git.graphState())
+    expect(graph.conflict).toBeNull()
+    expect(graph.nodes.filter((n) => n.kind === 'merge').length).toBeGreaterThanOrEqual(2) // your merge of main, then the pull request
+    expect(graph.nodes.some((n) => n.kind === 'teammate' && n.author === 'Aisha Khan')).toBe(true)
+  })
 })

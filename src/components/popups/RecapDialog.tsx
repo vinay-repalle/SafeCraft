@@ -1,3 +1,4 @@
+import { ROLE_INFO } from '../../app/nav'
 import { useLevelStore } from '../../store/levelStore'
 import { BUTTON_PRIMARY } from '../ui'
 import { Dialog } from './Dialog'
@@ -8,6 +9,8 @@ export function RecapDialog() {
   const runner = useLevelStore((s) => s.runner)
   const close = useLevelStore((s) => s.closePopup)
   const level = runner?.level
+  // Each level is written from one seat. Name that seat, not always the frontend one.
+  const seat = ROLE_INFO.find((r) => r.id === (level?.perspective ?? 'frontend'))?.label.toLowerCase() ?? 'frontend developer'
 
   return (
     <Dialog open={popup?.type === 'recap' && !!level} onClose={close} labelledBy="recap-title">
@@ -23,7 +26,7 @@ export function RecapDialog() {
           <p className="mt-1 text-body text-ink-2">{level.recap}</p>
           <p className="mt-4 text-body font-medium">Scenario</p>
           <p className="mt-1 text-body text-ink-2">
-            You are the frontend developer on {level.scenario.app}. {level.scenario.ticket.id} is assigned to you.
+            You are the {seat} on {level.scenario.app}. {level.scenario.ticket.id} is assigned to you.
           </p>
           <div className="mt-6 flex justify-end">
             <button type="button" className={BUTTON_PRIMARY} onClick={close}>

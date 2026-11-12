@@ -73,6 +73,24 @@ Done when: v1 scope works, the unslop checklist passes, the build is ready to de
 - [x] Deploy readiness (favicon, page description, `engines`, [DEPLOY.md](DEPLOY.md))
 - [ ] Owner check of the "done when" gate, then Git
 
+## Phase 7: Visual learning (added after the v1 deploy)
+Done when: the hardest ideas (commit, branch, pull, push, conflict) each have a visual that updates with what the learner does, the 3D additions work with a 2D fallback, and the unslop checklist passes.
+Order: 2D first (7a to 7e), then 3D (7f, 7g), then 7h and 7i last. Owner checks between groups. Motion rules: see "Phase 7 motion and 3D additions" in [DESIGN.md](DESIGN.md). The prompt for this phase is in [PHASE-7-PROMPT.md](PHASE-7-PROMPT.md).
+- [x] 7a Git graph (2D SVG: commits, branches, merges, push to remote, conflict; driven by gitSim events; panel beside the editor with a toggle that is remembered). `src/engine/gitGraph.ts` works the graph out from `GitSim.graphState()`; `src/components/git/GitGraph.tsx` draws it; open by default, saved under its own localStorage key `synccraft-ui`
+- [x] 7b Conflict resolver (2D: "yours", "theirs", "result" panels). `src/engine/conflictResolve.ts` and `src/components/editor/ConflictResolver.tsx`. Opens in the editor whenever a file has conflict markers. Level 4 (both seats) uses it. Level 5 as written has no conflict, so it only appears there if the learner causes one (owner decision pending)
+- [x] 7c Jargon mini-animations (play once with replay; commit, branch, pull, push, pull request, merge conflict). Data in `src/content/termAnimations.ts`, drawn by `src/components/sketch/Sketch.tsx`; shown in the first-time term card and behind "Watch it" in the cheat sheet
+- [x] 7d Field Guide diagrams (one inline SVG per article, 8 in all). Data in `src/content/guideDiagrams.ts`, same sketch format, still
+- [x] 7e Small feedback motion (step done, Sync Check popup; opacity and transform only). Step bars grow in and a "Step N done" line rises in; popups rise in; Sync Check output fades in. Motion classes in `src/index.css`, reduced motion shows the end state
+- [ ] Owner check of the 2D group
+- [ ] 7f Ticket journey in 3D (a ticket moves between the five roles; 2D fallback)
+- [ ] 7g Pipeline upgrades (conveyor while tests run, flat red plus one shake on failure, parcel stalls at a conflict; 2D fallback)
+- [ ] Owner check of the 3D group
+- [ ] 7h Level map as a 3D path with badges (2D list stays as the fallback)
+- [ ] 7i Conflict scene (two parcels meet at a merge gate)
+- [ ] Tests for every new piece of logic (Vitest), performance check (first paint, 3D chunk size)
+- [ ] Unslop audit: AUDIT-phase-7.md
+- [ ] Owner check of the "done when" gate, then Git
+
 ## Open items
 - [x] Palette: warm ramp with paprika accent, Figtree and JetBrains Mono, approved by owner
 - [x] Doc fixes: PRD path in CLAUDE.md and README, theme type includes 'system', editor is CodeMirror

@@ -38,6 +38,18 @@ export type GitEvent =
   | { type: 'github:pr-approved'; prId: number }
   | { type: 'github:pr-merged'; pr: PullRequest }
 
+// A read-only picture of the repository for the Git graph (Phase 7). `merge` is set while a
+// pull has stopped on a conflict: `ours` is your tip, `theirs` the commit you were pulling in.
+export type GraphCommit = Pick<Commit, 'id' | 'parents' | 'message' | 'author'>
+export type GraphState = {
+  commits: GraphCommit[]
+  local: Record<string, string>
+  remote: Record<string, string>
+  head: string
+  author: string
+  merge: { ours: string; theirs: string; label: string; conflicts: string[] } | null
+}
+
 export type GitResult = { ok: boolean; output: string }
 export type CommandKind = 'create-branch' | 'push' | 'pull' | 'commit' | 'other'
 
@@ -248,6 +260,20 @@ export class GitSim {
   pullRequest(id: number): PullRequest | undefined {
     const pr = this.prs.find((p) => p.id === id)
     return pr ? { ...pr } : undefined
+  }
+
+  // Everything the Git graph needs, as plain data (added in Phase 7). Commits come in the order
+  // they were made, which always puts a parent before its children. Nothing here can change
+  // the repository: the arrays and objects are copies.
+  graphState(): GraphState {
+    return {
+      commits: [...this.commits.values()].map(({ id, parents, message, author }) => ({ id, parents: [...parents], message, author })),
+      local: { ...this.local },
+      remote: { ...this.remote },
+      head: this.head,
+      author: this.author,
+      merge: this.merge ? { ours: this.local[this.head], theirs: this.merge.theirs, label: this.merge.label, conflicts: [...this.merge.conflicts] } : null,
+    }
   }
 
   // Commits made by the learner on the current branch: not on origin/main, not a merge.

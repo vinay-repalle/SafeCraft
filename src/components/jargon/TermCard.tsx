@@ -1,5 +1,7 @@
 import { jargon, type JargonTerm } from '../../content'
+import { TERM_ANIMATIONS } from '../../content/termAnimations'
 import { useProgressStore } from '../../store/progressStore'
+import { AnimatedSketch } from '../sketch/Sketch'
 import { PANEL_BUTTON } from '../ui'
 import { GuideLink } from './GuideLink'
 
@@ -45,6 +47,13 @@ export function FirstTimeCard({ termIds }: { termIds: string[] }) {
 
   return (
     <div className="mt-3 rounded-tag border border-line bg-raised p-3">
+      {/* Phase 7c: the core terms have a short animation that plays once as the card opens.
+          Keyed by term, so the next term's card plays its own from the start. */}
+      {TERM_ANIMATIONS[term.id] && (
+        <div className="mb-3">
+          <AnimatedSketch key={term.id} sketch={TERM_ANIMATIONS[term.id]} />
+        </div>
+      )}
       <TermDetails term={term} />
       <button type="button" className={`${PANEL_BUTTON} mt-3 bg-card`} onClick={() => markTermSeen(term.id)}>
         Got it

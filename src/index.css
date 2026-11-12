@@ -163,3 +163,118 @@
     }
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Phase 7 motion (see "Phase 7 motion and 3D additions" in docs/DESIGN.md)
+
+   A CSS "keyframe animation" describes how a property changes over time. Each
+   one here has only a "from" frame: the element animates FROM that state TO its
+   normal style. So the normal style is always the end state, which is exactly
+   what shows when reduced motion turns the animation off.
+
+   Rules: opacity and transform only, the one easing curve, played once (no
+   "infinite"). `--delay` lets one element start after another. Replaying means
+   remounting the element (a new React key), never looping.
+   --------------------------------------------------------------------------- */
+@keyframes motion-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+@keyframes motion-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes motion-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+/* Slides in from an offset set per element with --from-x and --from-y. */
+@keyframes motion-slide {
+  from {
+    transform: translate(var(--from-x, 0px), var(--from-y, 0px));
+  }
+}
+@keyframes motion-grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+/* One short shake, for a failure. */
+@keyframes motion-shake {
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+@layer components {
+  .motion-pop,
+  .motion-fade,
+  .motion-rise,
+  .motion-slide,
+  .motion-grow-x,
+  .motion-shake {
+    animation-timing-function: var(--ease-standard);
+    animation-fill-mode: both;
+    animation-delay: var(--delay, 0ms);
+    /* SVG shapes scale around their own centre, like HTML elements do. */
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .motion-pop {
+    animation-name: motion-pop;
+    animation-duration: 400ms;
+  }
+  .motion-fade {
+    animation-name: motion-fade;
+    animation-duration: 400ms;
+  }
+  .motion-rise {
+    animation-name: motion-rise;
+    animation-duration: 250ms;
+  }
+  .motion-slide {
+    animation-name: motion-slide;
+    animation-duration: 600ms;
+  }
+  .motion-grow-x {
+    animation-name: motion-grow-x;
+    animation-duration: 400ms;
+    transform-origin: left center;
+  }
+  .motion-shake {
+    animation-name: motion-shake;
+    animation-duration: 400ms;
+  }
+
+  /* Popups rise in when they open. The <dialog> element is shown by the browser, so the
+     animation runs each time it opens. */
+  dialog.dialog-surface[open] {
+    animation: motion-rise 250ms var(--ease-standard);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .motion-pop,
+    .motion-fade,
+    .motion-rise,
+    .motion-slide,
+    .motion-grow-x,
+    .motion-shake,
+    dialog.dialog-surface[open] {
+      animation: none !important;
+    }
+  }
+}

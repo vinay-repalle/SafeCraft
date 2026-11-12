@@ -4,6 +4,7 @@ import { ROLE_INFO } from '../app/nav'
 import { MiniTerminal } from '../components/editor/MiniTerminal'
 import { EditorPane } from '../components/editor/EditorPane'
 import { GitButtons } from '../components/editor/GitButtons'
+import { GitGraph } from '../components/git/GitGraph'
 import { Board } from '../components/jira/Board'
 import { LevelMap } from '../components/LevelMap'
 import { ChatPanel } from '../components/jira/ChatPanel'
@@ -16,6 +17,7 @@ import { StepCard } from '../components/StepCard'
 import { PANEL } from '../components/ui'
 import { useLevelStore } from '../store/levelStore'
 import { useProgressStore } from '../store/progressStore'
+import { useUiStore } from '../store/uiStore'
 import { useEnsureLevel } from '../store/useEnsureLevel'
 import { ViewIntro } from './ViewIntro'
 
@@ -32,6 +34,7 @@ export function MyView() {
   const completed = useProgressStore((s) => s.completed[levelId]?.[role as PlayableRole] === true)
   const prCount = useLevelStore((s) => s.snapshot?.pullRequests.length ?? 0)
   const [tab, setTab] = useState<BottomTab>('terminal')
+  const graphOpen = useUiStore((s) => s.gitGraphOpen)
 
   // Start Level 1 the first time My view opens. The run is kept when you switch tabs.
   useEnsureLevel()
@@ -80,8 +83,12 @@ export function MyView() {
 
       <section aria-label="Code and Git" className={`${PANEL} gap-3 overflow-x-hidden overflow-y-auto p-4`}>
         <StepCard />
-        <div className="flex min-h-56 flex-1 flex-col">
-          <EditorPane />
+        {/* The editor, with the Git graph beside it when it is open (Phase 7a). */}
+        <div className={`flex flex-1 gap-3 ${graphOpen ? 'min-h-[30rem]' : 'min-h-56'}`}>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <EditorPane />
+          </div>
+          {graphOpen && <GitGraph />}
         </div>
         <GitButtons />
         <div className={`flex shrink-0 flex-col rounded-tag border border-line ${tab === 'pr' ? 'h-80' : 'h-48'}`}>
