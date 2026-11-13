@@ -106,6 +106,18 @@ Built 2026-11-13. Audit: [AUDIT-phase-8.md](AUDIT-phase-8.md).
 - [x] Owner feedback (2026-11-13), "feels empty": landing-only type sizes (`text-hero`, `text-section`, `text-intro` in `index.css`); hero fills the first screen, with the order-ticket tag and four counts from the game data; section titles and leads side by side; alternating raised bands; new "Inside the game" section (`GamePreview.tsx`, a still copy of the game screen fed from the Level 1 data); role cards with icons and the station each works at; closing panel in ink with the six-station route; footer with page and level links
 - [ ] Owner check of the "done when" gate, then Git
 
+## Phase 9: Easier play and motion polish (owner request, 2026-11-13)
+Done when: a first-time player can always see where to act next, My view works on a laptop, tablet and phone, the new motion follows DESIGN.md (including "Phase 9 guidance and layout additions"), and the unslop checklist passes. Audit: [AUDIT-phase-9.md](AUDIT-phase-9.md).
+- [x] Next-step spotlight: `src/store/nextAction.ts` works out the one control to use from the step's check and the state of the repository (a waiting merge comes first; after failed tests it walks edit, commit, push). `src/components/spotlight.ts` draws a dashed accent outline on it. Board arrows, chat replies, editor, Git buttons (then their text box, then Run), Pull request tab and Merge button. The step card says it in words with "Show me", which scrolls to it and focuses it. Tested on every learner step of all ten level files
+- [x] Git buttons: choosing one puts focus in its text box (or on Run), so Enter carries on
+- [x] First-visit tour: three cards beside the three zones (`src/components/PlayTour.tsx`), once, after the level intro. Saved as `tourDone` under `synccraft-ui`. "Show the tour of My view again" in the How to play article
+- [x] Narrow windows: no 1280px minimum. Below 1200px My view puts the step card on top and the zones in tabs ("Next" marks the tab that holds the next control); the page scrolls; the header puts the view tabs on their own row below 768px and icon-only buttons below 1024px; the role bar wraps; Team view scrolls sideways; the Field guide stacks
+- [x] Keyboard: `?` opens How to play (not while typing or with a popup open)
+- [x] Motion: tickets slide between lanes (`src/utils/useFlip.ts`); new chat lines rise in, new terminal lines fade or rise in (`src/utils/useNewSince.ts`); each new warning shakes once (`noticeSeq` in the level store) with an icon; the level-complete moment plays after the replay closes (medal, line, buttons); the output box keeps one height and its content fades on tab switch; zones fade in on narrow tab switch
+- [x] Fixed on the way: two screen-reader-only labels in the code zone stretched the page by 3px; chat and terminal "scroll to newest" also scrolled the page
+- [x] Tests: 20 new (342 in all). Typecheck and build pass
+- [ ] Owner check of the "done when" gate, then Git
+
 ## Open items
 - [x] Palette: warm ramp with paprika accent, Figtree and JetBrains Mono, approved by owner
 - [x] Doc fixes: PRD path in CLAUDE.md and README, theme type includes 'system', editor is CodeMirror

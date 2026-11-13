@@ -1,9 +1,9 @@
-import { Check } from 'lucide-react'
+import { Check, Compass } from 'lucide-react'
 import { useEffect } from 'react'
 import { GuideBody } from '../components/guide/GuideBody'
 import { HowToPlay } from '../components/landing/HowToPlay'
 import { Sketch } from '../components/sketch/Sketch'
-import { PANEL } from '../components/ui'
+import { PANEL, PANEL_BUTTON } from '../components/ui'
 import { GUIDE_DIAGRAMS } from '../content/guideDiagrams'
 import { HOW_TO_PLAY_SLUG, findGuide, guides } from '../content/guides'
 import { useProgressStore } from '../store/progressStore'
@@ -16,6 +16,7 @@ export function FieldGuide() {
   const openGuide = useUiStore((s) => s.openGuide)
   const read = useProgressStore((s) => s.guidesRead)
   const markGuideRead = useProgressStore((s) => s.markGuideRead)
+  const startTour = useUiStore((s) => s.startTour)
 
   const current = findGuide(slug) ?? guides[0]
 
@@ -27,8 +28,9 @@ export function FieldGuide() {
   if (!current) return <p className="p-2 text-body text-ink-2">No guides yet.</p>
 
   return (
-    <div className="grid h-full grid-cols-[320px_minmax(0,1fr)] gap-4">
-      <nav aria-label="Articles" className={`${PANEL} overflow-y-auto p-4`}>
+    // Phase 9: on a narrow window the list sits above the article, and the page scrolls.
+    <div className="grid gap-4 md:h-full md:grid-cols-[280px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)]">
+      <nav aria-label="Articles" className={`${PANEL} max-h-72 overflow-y-auto p-4 md:max-h-none`}>
         <div className="mb-3 flex items-baseline justify-between gap-2">
           <h1 className="text-body font-medium">Field guide</h1>
           <span className="text-meta text-ink-3">
@@ -60,7 +62,7 @@ export function FieldGuide() {
         </ul>
       </nav>
 
-      <article className={`${PANEL} overflow-y-auto p-6`} aria-labelledby="guide-title">
+      <article className={`${PANEL} overflow-y-auto p-4 md:p-6`} aria-labelledby="guide-title">
         <div className="max-w-2xl">
           <p className="text-meta text-ink-3">{current.minutes} min read</p>
           <h2 id="guide-title" className="mt-1 text-display font-medium">
@@ -69,6 +71,11 @@ export function FieldGuide() {
           {/* Phase 8: How to play is drawn by the same component as on the landing page. */}
           {current.slug === HOW_TO_PLAY_SLUG && (
             <div className="mt-4">
+              {/* Phase 9: the first-visit tour of My view, on request. */}
+              <button type="button" className={`${PANEL_BUTTON} mb-4`} onClick={startTour}>
+                <Compass size={16} strokeWidth={1.5} />
+                Show the tour of My view again
+              </button>
               <HowToPlay variant="guide" />
             </div>
           )}

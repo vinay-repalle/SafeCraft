@@ -31,7 +31,9 @@ export function TeamView() {
   const summary = step ? summarize(step.role, statuses[step.role].state) : 'The level is finished. Everyone has done their part.'
 
   return (
-    <section aria-label="Team view" className="flex h-full min-h-0 flex-col gap-4">
+    // Phase 9: the five columns need about 1100px. On a narrower window the view scrolls sideways
+    // inside the page (the ticket desks sit over their columns, so the columns are not squeezed).
+    <section aria-label="Team view" className="flex h-full min-h-0 min-w-[1100px] flex-col gap-4">
       <header className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-lead font-medium">Team view</h1>

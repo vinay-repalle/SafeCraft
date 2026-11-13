@@ -1,9 +1,12 @@
 import { ArrowLeft, ArrowRight } from 'lucide-react'
+import { useRef } from 'react'
 import { ROLE_INFO } from '../../app/nav'
 import { COLUMNS } from '../../engine/jiraSim'
 import type { Ticket, TicketStatus } from '../../engine/types'
 import { useLevelStore } from '../../store/levelStore'
 import { useProgressStore } from '../../store/progressStore'
+import { useFlip } from '../../utils/useFlip'
+import { spotClass, spotProps, useNextAction } from '../spotlight'
 import { TicketTag } from './TicketTag'
 
 const label = (status: TicketStatus) => COLUMNS.find((c) => c.id === status)!.label
@@ -12,16 +15,24 @@ const roleLabel = (role: Ticket['assignee']) => ROLE_INFO.find((r) => r.id === r
 // The Mini-Jira board. Columns are stacked lanes, because the left zone is narrow.
 // Tickets assigned to you can be dragged to a lane, or moved with the arrow buttons
 // (a keyboard-friendly alternative to dragging).
+// Phase 9: a ticket slides to its new lane (FLIP, see useFlip), and when a step asks you to move
+// one, the arrow that moves it the right way has the dashed next-step outline.
 export function Board() {
   const snapshot = useLevelStore((s) => s.snapshot)
   const act = useLevelStore((s) => s.act)
   const role = useProgressStore((s) => s.settings.role)
+  const root = useRef<HTMLDivElement>(null)
+  useFlip(root, snapshot?.board)
+  const next = useNextAction()
   if (!snapshot) return null
+
+  const goal = next?.kind === 'ticket' ? next : null
+  const goalIndex = goal ? COLUMNS.findIndex((c) => c.id === goal.to) : -1
 
   const move = (ticketId: string, to: TicketStatus) => act({ type: 'moveTicket', ticketId, to })
 
   return (
-    <div className="flex flex-col gap-3">
+    <div ref={root} className="flex flex-col gap-3">
       {COLUMNS.map((column, columnIndex) => {
         const tickets = snapshot.board[column.id]
         return (
@@ -44,10 +55,14 @@ export function Board() {
               {tickets.map((ticket) => {
                 const mine = ticket.assignee === role && column.id !== 'done'
                 const prev = COLUMNS[columnIndex - 1]
-                const next = COLUMNS[columnIndex + 1]
+                const after = COLUMNS[columnIndex + 1]
+                const isGoal = goal?.ticketId === ticket.id && goalIndex !== columnIndex
+                const spotNext = isGoal && goalIndex > columnIndex
+                const spotPrev = isGoal && goalIndex < columnIndex
                 return (
                   <li
                     key={ticket.id}
+                    data-flip-id={ticket.id}
                     draggable={mine}
                     onDragStart={(e) => e.dataTransfer.setData('text/plain', ticket.id)}
                     className={`rounded-tag border border-line bg-raised p-3 ${mine ? 'cursor-grab' : ''}`}
@@ -57,12 +72,12 @@ export function Board() {
                       {mine && (
                         <span className="flex gap-1">
                           {prev && (
-                            <MoveButton aria-label={`Move ${ticket.id} to ${label(prev.id)}`} onClick={() => move(ticket.id, prev.id)}>
+                            <MoveButton spot={spotPrev} aria-label={`Move ${ticket.id} to ${label(prev.id)}`} onClick={() => move(ticket.id, prev.id)}>
                               <ArrowLeft size={16} strokeWidth={1.5} />
                             </MoveButton>
                           )}
-                          {next && (
-                            <MoveButton aria-label={`Move ${ticket.id} to ${label(next.id)}`} onClick={() => move(ticket.id, next.id)}>
+                          {after && (
+                            <MoveButton spot={spotNext} aria-label={`Move ${ticket.id} to ${label(after.id)}`} onClick={() => move(ticket.id, after.id)}>
                               <ArrowRight size={16} strokeWidth={1.5} />
                             </MoveButton>
                           )}
@@ -82,12 +97,13 @@ export function Board() {
   )
 }
 
-function MoveButton(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+function MoveButton({ spot = false, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { spot?: boolean }) {
   return (
     <button
       type="button"
       title={props['aria-label']}
-      className="flex size-7 items-center justify-center rounded-tag border border-line bg-card text-ink-2 transition-colors hover:text-ink"
+      {...spotProps(spot)}
+      className={`flex size-7 items-center justify-center rounded-tag border border-line bg-card text-ink-2 transition-colors hover:text-ink${spotClass(spot)}`}
       {...props}
     />
   )

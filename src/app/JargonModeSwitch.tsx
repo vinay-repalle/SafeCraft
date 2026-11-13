@@ -14,7 +14,8 @@ export function JargonModeSwitch() {
 
   return (
     <div className="flex items-center gap-2">
-      <span id="jargon-label" className="text-meta text-ink-3">
+      {/* Hidden on a phone-width window to save room; screen readers still hear it. */}
+      <span id="jargon-label" className="sr-only text-meta text-ink-3 sm:not-sr-only">
         Terms
       </span>
       <div role="group" aria-labelledby="jargon-label" className="flex gap-0.5 rounded-control border border-line bg-raised p-0.5">

@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { hasConflictMarkers } from '../../engine/conflictResolve'
 import { useCurrentStep, useLevelStore } from '../../store/levelStore'
 import { useUiStore } from '../../store/uiStore'
+import { spotClass, spotProps, useNextAction } from '../spotlight'
 import { ConflictResolver } from './ConflictResolver'
 
 // Loaded on demand: the editor library is the biggest piece of the app after React.
@@ -18,6 +19,7 @@ export function EditorPane() {
   const [chosen, setChosen] = useState<string | null>(null)
   const graphOpen = useUiStore((s) => s.gitGraphOpen)
   const toggleGraph = useUiStore((s) => s.toggleGitGraph)
+  const spot = useNextAction()?.kind === 'editor'
 
   // When a step is about one file, show that file. The tab then stays put after the step
   // is done (so the file you just edited does not vanish), and you can still pick another.
@@ -46,7 +48,7 @@ export function EditorPane() {
   const theirsAuthor = merge ? (runner?.git.getCommit(merge.theirs)?.author ?? null) : null
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-tag border border-line">
+    <div {...spotProps(spot)} className={`flex min-h-0 flex-1 flex-col overflow-hidden rounded-tag border border-line${spotClass(spot)}`}>
       <div className="flex items-center justify-between border-b border-line bg-raised pr-1">
         <div role="tablist" aria-label="Files" className="flex min-w-0 overflow-x-auto">
           {paths.map((p) => (

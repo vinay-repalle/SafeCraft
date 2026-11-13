@@ -147,8 +147,7 @@
     /* Digits are the same width everywhere, so numbers line up. */
     font-variant-numeric: tabular-nums;
     -webkit-font-smoothing: antialiased;
-    /* The game is desktop only and sets its own minimum width (src/app/App.tsx). The landing
-       page works at any width, so the body has none. */
+    /* No minimum width: the landing page and the game both work at any width (Phase 9). */
   }
 
   button {
@@ -215,6 +214,12 @@
     transform: scaleX(0);
   }
 }
+/* Phase 9: the spotlight outline fades in from clear. Colour only. */
+@keyframes spotlight-in {
+  from {
+    outline-color: transparent;
+  }
+}
 /* One short shake, for a failure. */
 @keyframes motion-shake {
   20% {
@@ -271,6 +276,18 @@
     animation-duration: 400ms;
   }
 
+  /* Phase 9: the next-step spotlight. A dashed accent outline around the one control to use
+     now (src/components/spotlight.ts). Dashed, so it never looks like the solid focus ring.
+     It fades in once (a colour change) and then stays still: no pulsing. */
+  .spotlight {
+    outline: 2px dashed var(--accent);
+    outline-offset: 2px;
+    animation: spotlight-in 400ms var(--ease-standard) both;
+  }
+  .spotlight:focus-visible {
+    outline-style: solid;
+  }
+
   /* Popups rise in when they open. The <dialog> element is shown by the browser, so the
      animation runs each time it opens. */
   dialog.dialog-surface[open] {
@@ -284,6 +301,7 @@
     .motion-slide,
     .motion-grow-x,
     .motion-shake,
+    .spotlight,
     dialog.dialog-surface[open] {
       animation: none !important;
     }

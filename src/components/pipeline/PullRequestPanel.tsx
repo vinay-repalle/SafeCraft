@@ -1,5 +1,6 @@
-import { GitMerge } from 'lucide-react'
+import { CircleAlert, GitMerge } from 'lucide-react'
 import { useLevelStore } from '../../store/levelStore'
+import { spotClass, spotProps, useNextAction } from '../spotlight'
 import { BUTTON_PRIMARY } from '../ui'
 
 const statusColour = { good: 'text-pass', bad: 'text-fail', wait: 'text-ink-2' } as const
@@ -18,6 +19,8 @@ export function PullRequestPanel() {
   const snapshot = useLevelStore((s) => s.snapshot)
   const act = useLevelStore((s) => s.act)
   const notice = useLevelStore((s) => s.notice)
+  const noticeSeq = useLevelStore((s) => s.noticeSeq)
+  const spot = useNextAction()?.kind === 'merge'
   if (!snapshot) return null
 
   const pr = snapshot.pullRequests.at(-1)
@@ -29,7 +32,8 @@ export function PullRequestPanel() {
   const merged = pr.status === 'merged'
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto text-caption">
+    // -m-1 p-1: room inside the scroll box for the next-step outline around the merge button.
+    <div className="-m-1 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-1 text-caption">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-body font-medium text-ink">
@@ -40,7 +44,7 @@ export function PullRequestPanel() {
           </p>
         </div>
         {!merged && (
-          <button type="button" className={BUTTON_PRIMARY} onClick={() => act({ type: 'mergePr' })}>
+          <button type="button" {...spotProps(spot)} className={`${BUTTON_PRIMARY} shrink-0${spotClass(spot)}`} onClick={() => act({ type: 'mergePr' })}>
             <GitMerge size={16} strokeWidth={1.5} />
             Merge pull request
           </button>
@@ -66,7 +70,13 @@ export function PullRequestPanel() {
         {snapshot.deployed && <Row name="Release" value="Live" tone="good" />}
       </dl>
 
-      {notice && <p className="text-fail">{notice}</p>}
+      {/* Phase 9: each new warning shakes once, as on the step card. */}
+      {notice && (
+        <p key={noticeSeq} className="motion-shake flex items-start gap-1.5 text-fail">
+          <CircleAlert size={16} strokeWidth={1.5} className="mt-0.5 shrink-0" aria-hidden />
+          {notice}
+        </p>
+      )}
 
       {report && (
         <div>

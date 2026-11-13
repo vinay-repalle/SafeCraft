@@ -29,7 +29,9 @@ export function PipelineView() {
   const who = step ? ROLE_INFO.find((r) => r.id === step.role)?.label : null
 
   return (
-    <section aria-label="Pipeline view" className={`${PANEL} h-full gap-3 p-4`}>
+    // Below 1200px the page scrolls and "full height" has nothing to measure, so the view keeps a
+    // height of its own for the scene (Phase 9).
+    <section aria-label="Pipeline view" className={`${PANEL} h-[40rem] gap-3 p-4 min-[1200px]:h-full`}>
       <header className="flex items-baseline justify-between gap-4">
         <h1 className="text-lead font-medium">Pipeline view</h1>
         <p className="text-caption text-ink-3">{runner ? `Level ${runner.level.id}: ${runner.level.title}` : ''}</p>

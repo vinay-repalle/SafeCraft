@@ -40,6 +40,9 @@ type LevelState = {
   popup: Popup | null
   // A gentle warning or error from the last action, shown on the step card.
   notice: string | null
+  // Phase 9: goes up with every new notice, even a repeat of the same text, so the step card
+  // can shake once per mistake.
+  noticeSeq: number
 
   // The most recent action that changed the repository (Phase 7a): the Git events it caused and
   // the repository as it was just before, so the Git graph can show what moved and from where.
@@ -165,7 +168,7 @@ export const useLevelStore = create<LevelState>()((set, get) => {
       case 'mistake': {
         // Gentle mode: a warning, no penalty. The full explanation comes in the replay.
         const rule = runner.level.replay.find((r) => r.mistake === event.id)
-        if (rule) set({ notice: rule.you })
+        if (rule) set((s) => ({ notice: rule.you, noticeSeq: s.noticeSeq + 1 }))
         break
       }
       case 'level:complete':
@@ -220,6 +223,7 @@ export const useLevelStore = create<LevelState>()((set, get) => {
     feed: [],
     popup: null,
     notice: null,
+    noticeSeq: 0,
     gitChange: { seq: 0, events: [], before: null },
 
     load: (levelId, options) => {
@@ -265,7 +269,7 @@ export const useLevelStore = create<LevelState>()((set, get) => {
       // Pull requests are a GitHub feature, not a git command. The real equivalent is the GitHub CLI.
       else if (action.type === 'raisePr') logCommand(`gh pr create --base main --title "${action.title}"`, result)
       else if (action.type === 'mergePr') logCommand('gh pr merge --merge', result)
-      else if (!result.ok) set({ notice: result.message })
+      else if (!result.ok) set((s) => ({ notice: result.message, noticeSeq: s.noticeSeq + 1 }))
       set({ snapshot: runner.snapshot() })
       return result
     }),
@@ -285,7 +289,7 @@ export const useLevelStore = create<LevelState>()((set, get) => {
       }
       if (step?.kind === 'git' && result.message) logAutoFillGit(result.message)
       else if (step?.kind === 'syncCheck' && step.autoFill) logCommand(step.autoFill, result)
-      else if (!result.ok) set({ notice: result.message })
+      else if (!result.ok) set((s) => ({ notice: result.message, noticeSeq: s.noticeSeq + 1 }))
       set({ snapshot: runner.snapshot() })
     }),
 
@@ -303,7 +307,7 @@ export const useLevelStore = create<LevelState>()((set, get) => {
         set({ popup: null })
         resume(popup.pending)
       } else if (stoppedOnConflict(runner)) {
-        set({ popup: null, notice: CONFLICT_NOTICE })
+        set((s) => ({ popup: null, notice: CONFLICT_NOTICE, noticeSeq: s.noticeSeq + 1 }))
       } else {
         set({ popup: { ...popup, output: result.message } })
       }
@@ -316,7 +320,7 @@ export const useLevelStore = create<LevelState>()((set, get) => {
       if (choice === 'auto') logCommand('git pull origin main', result)
       set({ snapshot: runner.snapshot() })
       if (!result.ok && stoppedOnConflict(runner)) {
-        set({ popup: null, notice: CONFLICT_NOTICE })
+        set((s) => ({ popup: null, notice: CONFLICT_NOTICE, noticeSeq: s.noticeSeq + 1 }))
         return
       }
       if (!result.ok) {

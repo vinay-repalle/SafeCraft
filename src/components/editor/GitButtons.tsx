@@ -1,6 +1,7 @@
 import { ArrowDownToLine, ArrowUpFromLine, GitBranch, GitCommitHorizontal, GitPullRequest, type LucideIcon } from 'lucide-react'
-import { useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { useLevelStore } from '../../store/levelStore'
+import { spotClass, spotProps, useNextAction } from '../spotlight'
 import { BUTTON_PRIMARY, INPUT } from '../ui'
 
 type Tool = 'branch' | 'commit' | 'pull' | 'push' | 'pr'
@@ -21,6 +22,17 @@ export function GitButtons() {
   const runCommand = useLevelStore((s) => s.runCommand)
   const [tool, setTool] = useState<Tool>('pull')
   const [value, setValue] = useState('')
+  const input = useRef<HTMLInputElement>(null)
+  const runButton = useRef<HTMLButtonElement>(null)
+  // Phase 9: the button to use next, if it is one of these. The learner still chooses it.
+  const next = useNextAction()
+  const suggested = next?.kind === 'git' ? next.tool : null
+  // After a button is chosen, its text box takes the typing straight away (or Run takes focus,
+  // for Pull and Push, which need no text), so Enter carries on.
+  const [focusSeq, setFocusSeq] = useState(0)
+  useEffect(() => {
+    if (focusSeq) (input.current ?? runButton.current)?.focus()
+  }, [focusSeq])
   if (!snapshot) return null
 
   const branch = snapshot.git.branch
@@ -49,7 +61,14 @@ export function GitButtons() {
   const choose = (id: Tool) => {
     setTool(id)
     setValue('')
+    setFocusSeq((n) => n + 1)
   }
+
+  // Once the suggested button is chosen, the outline moves on: to the text box while it is empty,
+  // then to Run.
+  const onSuggested = suggested !== null && tool === suggested
+  const spotInput = onSuggested && needsText && !text
+  const spotRun = onSuggested && !spotInput
 
   return (
     <div className="rounded-tag border border-line bg-raised p-3">
@@ -60,9 +79,10 @@ export function GitButtons() {
             type="button"
             aria-pressed={tool === id}
             onClick={() => choose(id)}
+            {...spotProps(suggested === id && tool !== id)}
             className={`flex h-8 items-center gap-2 whitespace-nowrap rounded-control border px-3 text-body transition-colors ${
               tool === id ? 'border-accent bg-card font-medium text-ink' : 'border-line text-ink-2 hover:text-ink'
-            }`}
+            }${spotClass(suggested === id && tool !== id)}`}
           >
             <Icon size={16} strokeWidth={1.5} />
             {label}
@@ -81,8 +101,10 @@ export function GitButtons() {
             {tool === 'pr' && <span className="shrink-0">gh pr create --base main --title</span>}
             {needsText && (
               <input
+                ref={input}
                 aria-label={current.field}
-                className={INPUT}
+                {...spotProps(spotInput)}
+                className={`${INPUT}${spotClass(spotInput)}`}
                 placeholder={current.placeholder}
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
@@ -92,13 +114,13 @@ export function GitButtons() {
             )}
           </div>
         </div>
-        <button type="button" className={BUTTON_PRIMARY} onClick={run} disabled={needsText && !text}>
+        <button ref={runButton} type="button" {...spotProps(spotRun)} className={`${BUTTON_PRIMARY}${spotClass(spotRun)}`} onClick={run} disabled={needsText && !text}>
           Run
         </button>
       </div>
       <p className="mt-1 text-meta text-ink-3">
         {tool === 'pr' ? 'Pull requests live on GitHub; this is the GitHub command line equivalent.' : 'This is the real command that runs.'}
-        {tool === 'commit' && ' Press Enter to commit.'}
+        {needsText && ' Press Enter to run it.'}
       </p>
     </div>
   )

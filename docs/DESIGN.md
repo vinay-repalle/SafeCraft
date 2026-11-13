@@ -34,5 +34,14 @@ These add to the rules above. They do not replace them.
 - **Dependencies:** no new npm package without asking the owner first.
 - **States:** visible focus rings, clear active and hover states.
 
+## Phase 9 guidance and layout additions
+These add to the rules above. They do not replace them.
+- **Next-step outline:** the one control to use now gets a dashed accent outline (2px, 2px offset). Dashed, so it never reads as the solid focus ring. It fades in once (colour only) and never pulses. Only one control has it at a time, and none while a popup or the tour is open.
+- **Say it in words:** the step card names the same control ("Next: Use the Create branch button") with a "Show me" button, so the outline is never the only signal.
+- **Tour:** three cards, once, beside the zone they describe (never on top of it). Skip or Escape ends it. It can be replayed from the How to play article.
+- **Moving items:** a ticket that changes lane slides there (FLIP, transform only). New chat and terminal lines rise or fade in; lines already there when a view opens stay still.
+- **Narrow windows:** no minimum width. Below 1200px My view shows one zone at a time under the step card, and the page scrolls. Every zone still works at 390px.
+- **Height changes:** never animate height. Keep a box one height instead (the output box under the Git buttons).
+
 ## Do not
 Rename features, invent claims, or swap one trend (glass, grain, neon, bento) for another.

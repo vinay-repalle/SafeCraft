@@ -1,19 +1,30 @@
-import { ArrowRight, Check, FastForward, Lightbulb } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { ArrowRight, Award, Check, CircleAlert, FastForward, Lightbulb, LocateFixed } from 'lucide-react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { ROLE_INFO } from '../app/nav'
-import { LEVEL_IDS } from '../content'
+import { LEVEL_IDS, type PlayableRole } from '../content'
+import { COLUMNS } from '../engine/jiraSim'
 import type { LevelRunner } from '../engine/levelRunner'
 import { useCurrentStep, useLevelStore } from '../store/levelStore'
+import { describeAction } from '../store/nextAction'
+import { useProgressStore } from '../store/progressStore'
 import { doneLabel, justCompleted } from '../utils/stepFeedback'
 import { FirstTimeCard } from './jargon/TermCard'
 import { JargonText } from './jargon/JargonText'
+import { showNextAction, useNextAction } from './spotlight'
 import { BUTTON_PRIMARY, PANEL_BUTTON } from './ui'
+
+const statusLabel = (status: string) => COLUMNS.find((c) => c.id === status)?.label ?? status
 
 // The task: what to do now, a hint, and Skip & Auto-Fill. Sits above the editor.
 export function StepCard() {
   const runner = useLevelStore((s) => s.runner)
   const snapshot = useLevelStore((s) => s.snapshot)
   const notice = useLevelStore((s) => s.notice)
+  const noticeSeq = useLevelStore((s) => s.noticeSeq)
+  const popup = useLevelStore((s) => s.popup)
+  const playRole = useLevelStore((s) => s.playRole)
+  const completed = useProgressStore((s) => s.completed)
+  const next = useNextAction()
   const autoFill = useLevelStore((s) => s.autoFill)
   const openReplay = useLevelStore((s) => s.openReplay)
   const restart = useLevelStore((s) => s.restart)
@@ -45,6 +56,7 @@ export function StepCard() {
 
   const total = runner.level.steps.length
   const doneCount = snapshot.completedStepIds.length
+  const levelsDone = LEVEL_IDS.filter((id) => completed[id]?.[playRole as PlayableRole]).length
 
   return (
     <div className="rounded-tag border border-line bg-raised p-4">
@@ -66,10 +78,18 @@ export function StepCard() {
       )}
 
       {!step ? (
-        <>
-          <p className="text-lead font-medium">Level complete</p>
-          <p className="mt-1 text-body text-ink-2">Your change is live. See what you did well and what to watch for next time.</p>
-          <div className="mt-3 flex gap-2">
+        // Phase 9: the level-complete moment. The Mistakes replay opens first, so the moment waits
+        // behind it and plays when the replay closes (the new key remounts it). It plays once:
+        // the medal pops, the line rises, then the buttons. Under reduced motion it just shows.
+        <div key={popup ? 'behind' : 'shown'}>
+          <p className="flex items-center gap-2 text-lead font-medium">
+            <Award size={18} strokeWidth={1.5} className="motion-pop text-accent" aria-hidden />
+            Level complete
+          </p>
+          <p className="motion-rise mt-1 text-body text-ink-2" style={{ '--delay': '120ms' } as CSSProperties}>
+            Your change is live. <span className="tabular-nums">{levelsDone} of {LEVEL_IDS.length}</span> levels done in this seat. See what you did well and what to watch for next time.
+          </p>
+          <div className="motion-rise mt-3 flex flex-wrap gap-2" style={{ '--delay': '240ms' } as CSSProperties}>
             <button type="button" className={BUTTON_PRIMARY} onClick={openReplay}>
               Show replay
             </button>
@@ -83,7 +103,7 @@ export function StepCard() {
               </button>
             )}
           </div>
-        </>
+        </div>
       ) : (
         <>
           <p className="text-meta text-ink-3">
@@ -95,8 +115,30 @@ export function StepCard() {
             <JargonText text={step.prompt} terms={step.terms} />
           </p>
 
+          {/* Phase 9: where to do it, in words, and a jump to it. The same control has a dashed outline. */}
+          {next && (
+            <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-ink-2">
+              <span>
+                <span className="font-medium text-ink">Next:</span> {describeAction(next, statusLabel)}
+              </span>
+              <button
+                type="button"
+                onClick={() => showNextAction(next)}
+                className="flex h-6 items-center gap-1 rounded-tag px-1.5 text-caption text-accent transition-colors hover:bg-card"
+              >
+                <LocateFixed size={16} strokeWidth={1.5} aria-hidden />
+                Show me
+              </button>
+            </p>
+          )}
           {hintFor === step.id && step.hint && <p className="mt-2 text-caption text-ink-2">{step.hint}</p>}
-          {notice && <p className="mt-2 text-caption text-fail">{notice}</p>}
+          {/* Phase 9: keyed by the notice counter, so each new warning shakes once, even a repeat. */}
+          {notice && (
+            <p key={noticeSeq} role="alert" className="motion-shake mt-2 flex items-start gap-1.5 text-caption text-fail">
+              <CircleAlert size={16} strokeWidth={1.5} className="mt-0.5 shrink-0" aria-hidden />
+              {notice}
+            </p>
+          )}
           {/* Tests that run on their own can fail. Say what to do, since the learner has no button for it. */}
           {step.auto?.type === 'runTests' && snapshot.lastTestReport && !snapshot.lastTestReport.passed && (
             <p className="mt-2 text-caption text-fail">The tests failed. Open the Pull request tab, read the log, fix the code, commit and push again. The tests run again by themselves.</p>

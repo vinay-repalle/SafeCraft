@@ -4,6 +4,7 @@ import { Landing } from '../views/Landing'
 import { MyView } from '../views/MyView'
 import { PipelineView } from '../views/PipelineView'
 import { TeamView } from '../views/TeamView'
+import { HOW_TO_PLAY_SLUG } from '../content/guides'
 import { useUiStore } from '../store/uiStore'
 import { Header } from './Header'
 import type { ViewId } from './nav'
@@ -37,13 +38,28 @@ function Game() {
     document.title = 'Play · SyncCraft'
   }, [])
 
+  // Phase 9: "?" opens How to play from anywhere in the game, except while typing (a text box or
+  // the code editor) or while a popup is open.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== '?' || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return
+      const el = e.target as HTMLElement | null
+      if (el?.closest('input, textarea, select, [contenteditable="true"]') || document.querySelector('dialog[open]')) return
+      e.preventDefault()
+      useUiStore.getState().openGuide(HOW_TO_PLAY_SLUG)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   return (
-    // Desktop only (PRD): below 1280px the game scrolls sideways rather than squeezing the three zones.
-    <div className="flex h-screen min-w-[1280px] flex-col">
+    // Phase 9: no minimum width. From 1200px up (the same line as My view's three columns) the
+    // window never scrolls and each zone scrolls inside itself. Below it, the whole page scrolls,
+    // so the header and role bar move out of the way, and Team view scrolls sideways in <main>.
+    <div className="flex min-h-dvh flex-col min-[1200px]:h-dvh">
       <Header view={view} onViewChange={setView} />
       <RoleBar />
-      {/* The window never scrolls; each zone scrolls inside itself. */}
-      <main className="min-h-0 flex-1 overflow-auto p-4">
+      <main className="flex-1 overflow-x-auto p-4 min-[1200px]:min-h-0 min-[1200px]:overflow-auto">
         <View />
       </main>
     </div>
