@@ -103,6 +103,7 @@ Built 2026-11-13. Audit: [AUDIT-phase-8.md](AUDIT-phase-8.md).
 - [x] Copy in `src/content/landing.ts`; tests for the scroll-to-stop logic and the routes. Also tests for the still pictures and the copy rules; 322 tests
 - [x] Unslop audit and performance check: AUDIT-phase-8.md
 - [x] Owner feedback (2026-11-13): the page spans the full window width (side padding only); the hero 3D scene turns and tilts with a mouse or touch drag, double-click resets (`useDragToTurn` in `LandingScene.tsx`); "Follow one order" cards stack as a deck, each new stop sliding up over the last (sticky slots in `LandingPictures.tsx`, landing points fed to `progressFromCenters`)
+- [x] Owner feedback (2026-11-13), "feels empty": landing-only type sizes (`text-hero`, `text-section`, `text-intro` in `index.css`); hero fills the first screen, with the order-ticket tag and four counts from the game data; section titles and leads side by side; alternating raised bands; new "Inside the game" section (`GamePreview.tsx`, a still copy of the game screen fed from the Level 1 data); role cards with icons and the station each works at; closing panel in ink with the six-station route; footer with page and level links
 - [ ] Owner check of the "done when" gate, then Git
 
 ## Open items

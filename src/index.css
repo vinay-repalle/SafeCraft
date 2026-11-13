@@ -109,6 +109,17 @@
   --text-title--line-height: 1.75rem;
   --text-display: 1.75rem; /* 28 / 32 */
   --text-display--line-height: 2rem;
+  /* Landing page only (Phase 8 feedback). The game's scale above is made for a dense app
+     screen; a full-width landing page needs larger headings. clamp(min, preferred, max) grows
+     the size with the window width (vw) between a phone size and a desktop size. */
+  --text-hero: clamp(2.25rem, 1.2rem + 2.6vw, 3.5rem); /* 36 to 56 */
+  --text-hero--line-height: 1.08;
+  --text-hero--letter-spacing: -0.02em;
+  --text-section: clamp(1.625rem, 1.1rem + 1.5vw, 2.5rem); /* 26 to 40 */
+  --text-section--line-height: 1.15;
+  --text-section--letter-spacing: -0.015em;
+  --text-intro: 1.125rem; /* 18 / 28 */
+  --text-intro--line-height: 1.75rem;
 
   /* Radii. Nesting rule: inner radius = outer radius minus the padding between. */
   --radius-*: initial;

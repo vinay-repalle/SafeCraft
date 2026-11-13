@@ -12,6 +12,7 @@ import type { Role } from '../store/types'
 import type { Sketch } from './sketch'
 
 export const HERO = {
+  eyebrow: 'Teamwork simulator',
   title: 'See how a software team gets one change to customers',
   lead: 'SyncCraft is a free simulator that runs in your browser. You join a small team building a food ordering app, pick up a ticket and carry one change from the board to the live app, through branches, pull requests, tests and merge conflicts.',
   note: 'Free. No sign-up. Your progress stays in this browser.',
@@ -19,6 +20,39 @@ export const HERO = {
   // Shown over the 3D hero only (the still picture cannot be turned).
   drag: 'Drag to turn. Double-click to reset.',
 }
+
+// The numbers under the hero. Each count comes from the game's own data (see Landing.tsx), so
+// these are only the words after the number.
+export const FACTS = {
+  levels: 'levels, each one change from ticket to live',
+  roles: 'roles on the team, two of them playable',
+  terms: 'terms explained in everyday words',
+  accounts: 'accounts, installs or downloads',
+}
+
+// "Inside the game": a still, cut-down copy of the game screen, part way through Level 1. The
+// tickets, file, chat and tests come from the level data; these are the words around them.
+export type GamePanelId = 'board' | 'code' | 'chat' | 'checks'
+
+export const GAME = {
+  title: 'Inside the game',
+  lead: 'The tools a real team works in, cut down to what one change needs. This is Level 1, part way through: the code is changed, the tests have passed and a reviewer has approved the pull request.',
+  level: 'Level 1',
+  branch: 'feature/ORD-14-place-order-button',
+  commit: 'ORD-14 Rename checkout button to Place order',
+  commitHash: '3f2a91c',
+  pr: 'Pull request',
+  checks: 'Checks',
+  review: 'Code reviewer approved',
+  you: 'You',
+  panels: [
+    { id: 'board', name: 'Ticket board', body: 'Tickets move from To do to Done as the work moves. Drag yours to In progress when you start.' },
+    { id: 'code', name: 'Editor and Git', body: 'A real code editor, and Git buttons that each show the command they run. A small terminal takes typed commands too.' },
+    { id: 'chat', name: 'Team chat', body: 'The project manager and teammates write to you, and you answer by choosing a reply. Some replies count as mistakes.' },
+    { id: 'checks', name: 'Tests and review', body: 'Automated tests run on every pull request, then a reviewer approves it. Only then can it be merged.' },
+  ] as { id: GamePanelId; name: string; body: string }[],
+}
+
 
 // The scroll story. Each stop is one text card beside the 3D scene; story.ts says what the
 // scene shows at each stop. The order follows the real route a change takes through the
@@ -98,6 +132,15 @@ export const ROLES = {
     pm: 'Writes the tickets, sets priorities and brings requirement changes.',
     reviewer: 'Reads each pull request and leaves comments before it is merged.',
   } satisfies Record<Role, string>,
+  // The station in the diorama where each role's work happens.
+  station: {
+    frontend: 'dev',
+    backend: 'dev',
+    qa: 'tests',
+    pm: 'pm',
+    reviewer: 'github',
+  } satisfies Record<Role, Station>,
+  worksAt: 'Works at',
 }
 
 // The station names the still pictures and the 3D labels use come from stationInfo.ts. This
@@ -210,6 +253,13 @@ export const HOW_TO_PLAY = {
 export const CLOSING = {
   title: 'Take one change to customers',
   lead: 'Start with Level 1. You can switch seats, views and levels at any time.',
+  routeTitle: 'The route every change takes',
+}
+
+export const FOOTER_LINKS = {
+  page: 'On this page',
+  play: 'Play',
+  levelPrefix: 'Level',
 }
 
 export const FOOTER = 'SyncCraft is open source under the MIT licence and runs entirely in your browser.'
