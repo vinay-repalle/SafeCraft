@@ -4,12 +4,15 @@ import type { Progress } from '../store/types'
 
 export type Badge = { id: string; label: string; detail: string; earned: boolean }
 
-const doneAs = (p: Progress, level: number) => p.completed[level] ?? {}
-const doneAny = (p: Progress, level: number) => doneAs(p, level).frontend === true || doneAs(p, level).backend === true
+// Badges only look at what was finished and read, so that is all they ask for.
+type BadgeInput = Pick<Progress, 'completed' | 'guidesRead'>
+
+const doneAs = (p: BadgeInput, level: number) => p.completed[level] ?? {}
+const doneAny = (p: BadgeInput, level: number) => doneAs(p, level).frontend === true || doneAs(p, level).backend === true
 
 // Badges are worked out from progress each time, not stored. That way an imported file or a
 // change to the rules can never leave a badge that was not earned, or hide one that was.
-export function computeBadges(p: Progress): Badge[] {
+export function computeBadges(p: BadgeInput): Badge[] {
   const badges: Badge[] = levelSummaries.map((l) => ({
     id: `level-${l.id}`,
     label: `Level ${l.id}`,

@@ -15,6 +15,7 @@ vi.hoisted(() => {
   })
 })
 
+import { gatePhase } from '../components/pipeline/mergeGate'
 import { useLevelStore } from './levelStore'
 import { DEFAULT_PROGRESS } from './progressSchema'
 import { useProgressStore } from './progressStore'
@@ -302,6 +303,22 @@ describe('levelStore pipeline motion', () => {
     expect(level().packageAt).toBe('github')
     expect(level().stallAt).toBeNull()
   })
+
+  // Phase 7i: the merge gate follows the store, closed, then merged, then gone, in both seats.
+  for (const role of ['frontend', 'backend'] as const) {
+    it(`closes the merge gate on the conflict, opens it once fixed, and clears it on push (${role})`, () => {
+      level().load(4, { skipRecap: true, role })
+      const phase = () => gatePhase(level().stallAt, (level().snapshot?.git.conflicts.length ?? 0) > 0)
+      autoFillUntil('pull-main')
+      expect(phase()).toBeNull()
+      level().autoFill()
+      expect(phase()).toBe('closed')
+      autoFillUntil('sync-push')
+      expect(phase()).toBe('merged')
+      autoFillUntil('raise-pr')
+      expect(phase()).toBeNull()
+    })
+  }
 
   it('does not stall in a level without a conflict', () => {
     for (let i = 0; i < 40 && !level().snapshot?.finished; i++) level().autoFill()

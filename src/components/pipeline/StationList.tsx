@@ -1,5 +1,6 @@
 import { Check, OctagonMinus, X } from 'lucide-react'
-import { Fragment } from 'react'
+import { MERGED_TEXT, THEIRS_TEXT, YOURS_TEXT, gateDescription } from './mergeGate'
+import { Fragment, type CSSProperties } from 'react'
 import { STATIONS } from '../../engine/types'
 import { useLevelStore } from '../../store/levelStore'
 import { TEST_RUN_SECONDS, displayStations, stallText } from './pipelineMotion'
@@ -15,6 +16,8 @@ import { useTestRun } from './useTestRun'
 //   tests running  a bar under the test server fills once, over the same time as the conveyor
 //   tests failed   the test server row shakes once (transform only)
 //   conflict       a "stopped" row appears after the station the work could not leave
+// Phase 7i adds the merge gate to that row: your change and theirs on either side of a red bar,
+// which become one chip once the conflict is fixed.
 export function StationList() {
   const { run, phase, running } = useTestRun()
   const stations = displayStations(useLevelStore((s) => s.stations), running)
@@ -58,17 +61,50 @@ export function StationList() {
                 </span>
               )}
             </li>
-            {stallAt === id && (
-              <li className={`motion-rise flex items-center gap-3 rounded-tag border border-dashed px-3 py-2 ${conflictOpen ? 'border-fail' : 'border-line'}`}>
-                <span aria-hidden className={`flex size-5 shrink-0 items-center justify-center rounded-tag ${conflictOpen ? 'bg-fail text-page' : 'border border-line text-ink-3'}`}>
-                  {conflictOpen ? <OctagonMinus size={14} strokeWidth={1.5} /> : <Check size={14} strokeWidth={1.5} />}
-                </span>
-                <span className={`text-caption ${conflictOpen ? 'text-fail' : 'text-ink-2'}`}>{stallText(conflictOpen)}</span>
-              </li>
-            )}
+            {stallAt === id && <MergeGateRow open={conflictOpen} />}
           </Fragment>
         )
       })}
     </ol>
+  )
+}
+
+const CHIP = 'flex items-center gap-1.5 rounded-tag border border-line bg-card px-2 py-0.5 text-meta text-ink'
+
+// The 2D merge gate (Phase 7i), after the station the work could not leave. While the conflict is
+// open: "Yours", a flat red bar that shakes once, "Theirs". Once fixed: one chip holding both.
+// The chips are named in words and the swatches repeat the 3D parcel colours.
+function MergeGateRow({ open }: { open: boolean }) {
+  const phase = open ? 'closed' : 'merged'
+  return (
+    <li aria-label={`${stallText(open)}. ${gateDescription(phase)}`} className={`motion-rise flex flex-col gap-2 rounded-tag border border-dashed px-3 py-2 ${open ? 'border-fail' : 'border-line'}`}>
+      <span className="flex items-center gap-3">
+        <span aria-hidden className={`flex size-5 shrink-0 items-center justify-center rounded-tag ${open ? 'bg-fail text-page' : 'border border-line text-ink-3'}`}>
+          {open ? <OctagonMinus size={14} strokeWidth={1.5} /> : <Check size={14} strokeWidth={1.5} />}
+        </span>
+        <span className={`text-caption ${open ? 'text-fail' : 'text-ink-2'}`}>{stallText(open)}</span>
+      </span>
+      {/* A new key per phase, so each change plays its one-off motion once. */}
+      <span key={phase} aria-hidden className="flex items-center gap-2 pl-8">
+        {open ? (
+          <>
+            <span className={CHIP}>
+              <span className="size-2 shrink-0 bg-accent" />
+              {YOURS_TEXT}
+            </span>
+            <span className="motion-shake block h-5 w-1 rounded-tag bg-fail" style={{ '--delay': '600ms' } as CSSProperties} />
+            <span className={`${CHIP} motion-slide`} style={{ '--from-x': '24px' } as CSSProperties}>
+              <span className="size-2 shrink-0 bg-ink-2" />
+              {THEIRS_TEXT}
+            </span>
+          </>
+        ) : (
+          <span className={`${CHIP} motion-pop`}>
+            <span className="size-2 shrink-0 bg-accent" />
+            {MERGED_TEXT}
+          </span>
+        )}
+      </span>
+    </li>
   )
 }

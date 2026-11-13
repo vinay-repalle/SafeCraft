@@ -262,13 +262,14 @@ export function StationModel({ id, position, state, conflict, colors, shadow }: 
   )
 }
 
-// The work package: a small parcel with a ribbon.
-export function ParcelModel({ c }: { c: SceneColors }) {
+// The work package: a small parcel with a ribbon. Yours is in the accent; a teammate's change
+// (Phase 7i) passes neutral `body` and `ribbon` colours, so the two are told apart.
+export function ParcelModel({ c, body, ribbon }: { c: SceneColors; body?: string; ribbon?: string }) {
   return (
     <group>
-      <Part size={[0.42, 0.36, 0.42]} pos={[0, 0.18, 0]} color={c.accent} rot={[0, 0.5, 0]} />
-      <Part size={[0.46, 0.38, 0.1]} pos={[0, 0.18, 0]} color={c.card} rot={[0, 0.5, 0]} />
-      <Part size={[0.1, 0.38, 0.46]} pos={[0, 0.18, 0]} color={c.card} rot={[0, 0.5, 0]} />
+      <Part size={[0.42, 0.36, 0.42]} pos={[0, 0.18, 0]} color={body ?? c.accent} rot={[0, 0.5, 0]} />
+      <Part size={[0.46, 0.38, 0.1]} pos={[0, 0.18, 0]} color={ribbon ?? c.card} rot={[0, 0.5, 0]} />
+      <Part size={[0.1, 0.38, 0.46]} pos={[0, 0.18, 0]} color={ribbon ?? c.card} rot={[0, 0.5, 0]} />
     </group>
   )
 }

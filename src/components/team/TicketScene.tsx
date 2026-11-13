@@ -7,12 +7,13 @@
 // capped at 1.5, no real-time shadows, low-poly parts built in code, flat colours only.
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useLayoutEffect, useRef, type MutableRefObject } from 'react'
-import { Vector3, type Camera, type Group, type OrthographicCamera } from 'three'
+import { Vector3, type Group, type OrthographicCamera } from 'three'
 import type { RoleState, RoleStatus } from '../../store/teamFeed'
 import { hopsToPlay } from '../../store/ticketJourney'
 import type { Role } from '../../store/types'
 import { usePrefersReducedMotion } from '../../utils/reducedMotion'
 import { travel } from '../pipeline/pipelineMotion'
+import { placeLabel } from '../pipeline/placeLabel'
 import { mix, useSceneColors, type SceneColors } from '../pipeline/sceneColors'
 import { PACKAGE_SECONDS } from '../pipeline/sceneLayout'
 import { Blob, Cylinder, Desk, PAD_HEIGHT, Part, Person, Shadow, useShadowTexture } from '../pipeline/stations'
@@ -47,17 +48,6 @@ const SCENE_TOP = screenY(LABEL_POINT[0], LABEL_POINT[1]) + LABEL_ROOM
 
 // Where the ticket lies on a role's desk, for desks this far apart.
 const ticketSpot = (role: Role, spacing: number) => new Vector3(deskX(role, spacing) + 0.15, DESK_TOP + 0.02, 0.18)
-
-// Moves an HTML label to sit over a 3D point. `anchor` is the CSS that sets which part of the
-// label touches the point.
-function placeLabel(el: HTMLElement | null | undefined, point: Vector3, camera: Camera, size: { width: number; height: number }, anchor: string) {
-  if (!el) return
-  point.project(camera)
-  const x = (point.x * 0.5 + 0.5) * size.width
-  const y = (-point.y * 0.5 + 0.5) * size.height
-  el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) ${anchor}`
-  el.style.opacity = '1'
-}
 
 // Points the camera at the row and centres the scene vertically, at the given zoom.
 function aimCamera(camera: OrthographicCamera, zoom: number) {

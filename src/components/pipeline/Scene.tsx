@@ -12,7 +12,8 @@ import { STATIONS, type Station } from '../../engine/types'
 import { useLevelStore } from '../../store/levelStore'
 import { usePrefersReducedMotion } from '../../utils/reducedMotion'
 import { PACKAGE_SECONDS, PAD, SPACING, layoutForAspect, slabSize, stationPositions, type SceneLayout, type XZ } from './sceneLayout'
-import { SHAKE_SECONDS, TEST_RUN_SECONDS, conveyorOffset, displayStations, nextStation, shakeOffset, stallPoint, testRunPhase, travel, type TravelKind } from './pipelineMotion'
+import { SHAKE_SECONDS, TEST_RUN_SECONDS, conveyorOffset, displayStations, nextStation, shakeOffset, testRunPhase, travel, type TravelKind } from './pipelineMotion'
+import { gateFrame, gatePhase, gatePoints, type GatePhase } from './mergeGate'
 import { mix, useSceneColors, type SceneColors } from './sceneColors'
 import { ParcelModel, Part, StationModel, Cylinder, useShadowTexture } from './stations'
 import { useTestRun } from './useTestRun'
@@ -208,17 +209,59 @@ function TestRunMotion({ slats, beltLength, shake }: { slats: MutableRefObject<(
   return null
 }
 
-// A flat red gate across the route, where the parcel stopped. Shown only while the conflict is open.
-function Barrier({ at, toward, colors }: { at: XZ; toward: XZ; colors: SceneColors }) {
+// Phase 7i: the merge gate. Two posts and a bar across the route between the developer desk
+// and GitHub, with the teammate's parcel on the far side. See mergeGate.ts for the story and the
+// timing. The bar is flat red while the conflict is open and shakes once when it closes; when the
+// conflict is fixed it lifts (a turn about one post) and their parcel rides into yours.
+// The component stays mounted with no conflict, so its clock knows the difference between "the
+// conflict just happened" (play it) and "the scene opened on an old conflict" (show the end).
+const GATE_HALF = 0.32
+function MergeGate({ phase, points, theirsFrom, colors }: { phase: GatePhase | null; points: { gate: XZ; yours: XZ; theirs: XZ } | null; theirsFrom: XZ | null; colors: SceneColors }) {
+  const shaker = useRef<Group>(null)
+  const bar = useRef<Group>(null)
+  const theirs = useRef<Group>(null)
+  const clock = useRef({ ready: false, start: -Infinity })
+  const invalidate = useThree((s) => s.invalidate)
+  const reduceMotion = usePrefersReducedMotion()
+
+  useLayoutEffect(() => {
+    const c = clock.current
+    c.start = c.ready && !reduceMotion && phase ? performance.now() : -Infinity
+    c.ready = true
+    invalidate()
+  }, [phase, reduceMotion, invalidate])
+
+  useFrame((state) => {
+    if (!phase || !points || !theirsFrom || !theirs.current) return
+    const f = gateFrame(phase, (performance.now() - clock.current.start) / 1000)
+    const [ax, az] = phase === 'closed' ? theirsFrom : points.theirs
+    const [bx, bz] = phase === 'closed' ? points.theirs : points.yours
+    theirs.current.position.set(ax + (bx - ax) * f.theirsK, PARCEL_Y + f.theirsLift * 0.8, az + (bz - az) * f.theirsK)
+    theirs.current.visible = f.theirsVisible
+    if (shaker.current) shaker.current.position.z = f.shake * SHAKE_SIZE
+    // The bar points across the route; turning it about the route's own axis lifts it upright.
+    if (bar.current) bar.current.rotation.x = -f.barOpen * Math.PI * 0.45
+    if (f.moving) state.invalidate()
+  })
+
+  if (!phase || !points) return null
   return (
-    <group position={[at[0], 0, at[1]]} rotation={[0, headingY(at, toward), 0]}>
-      <group position={[0.45, 0, 0]}>
-        {([-1, 1] as const).map((side) => (
-          <Cylinder key={side} radius={0.04} height={0.6} sides={5} pos={[0, 0.3, side * 0.32]} color={colors.ink3} />
-        ))}
-        <Part size={[0.06, 0.12, 0.76]} pos={[0, 0.5, 0]} color={colors.fail} />
+    <>
+      <group position={[points.gate[0], 0, points.gate[1]]} rotation={[0, headingY(points.yours, points.theirs), 0]}>
+        <group ref={shaker}>
+          {([-1, 1] as const).map((side) => (
+            <Cylinder key={side} radius={0.04} height={0.6} sides={5} pos={[0, 0.3, side * GATE_HALF]} color={colors.ink3} />
+          ))}
+          {/* The bar hinges on the near post. Flat red while closed, plain grey once lifted. */}
+          <group ref={bar} position={[0, 0.5, -GATE_HALF]}>
+            <Part size={[0.06, 0.12, GATE_HALF * 2 + 0.12]} pos={[0, 0, GATE_HALF]} color={phase === 'closed' ? colors.fail : colors.ink3} />
+          </group>
+        </group>
       </group>
-    </group>
+      <group ref={theirs}>
+        <ParcelModel c={colors} body={colors.ink2} ribbon={colors.ink3} />
+      </group>
+    </>
   )
 }
 
@@ -254,27 +297,31 @@ function Diorama({ labels }: { labels: LabelRefs }) {
     invalidate()
   }, [camera, layout, size.width, size.height, invalidate])
 
-  // Where the parcel waits when it has stalled on a conflict, and the station it was heading for.
+  // Phase 7i: where the merge gate stands when the parcel has stalled on a conflict, with your
+  // parcel on the near side and the teammate's on the far side, coming from the next station.
   const stallNext = stallAt ? nextStation(stallAt) : null
-  const stall = stallAt && stallNext ? stallPoint(positions[stallAt], positions[stallNext], PARCEL_OFFSET) : null
+  const gate = stallAt && stallNext ? gatePoints(positions[stallAt], positions[stallNext], PARCEL_OFFSET) : null
+  const phase = gate ? gatePhase(stallAt, conflictOpen) : null
 
   // Runs on every frame that is drawn. With frameloop="demand" that is exactly when
   // something changed, which is also when the labels need to move.
   const point = useRef(new Vector3())
   useFrame((state) => {
-    const place = (el: HTMLElement | null | undefined, x: number, y: number, z: number) => {
+    const place = (el: HTMLElement | null | undefined, x: number, y: number, z: number, anchor = 'translate(-50%, -50%)') => {
       if (!el) return
       point.current.set(x, y, z).project(state.camera)
       const sx = (point.current.x * 0.5 + 0.5) * state.size.width
       const sy = (-point.current.y * 0.5 + 0.5) * state.size.height
-      el.style.transform = `translate(${sx.toFixed(1)}px, ${sy.toFixed(1)}px) translate(-50%, -50%)`
+      el.style.transform = `translate(${sx.toFixed(1)}px, ${sy.toFixed(1)}px) ${anchor}`
       el.style.opacity = '1'
     }
     for (const id of STATIONS) place(labels.current[id], positions[id][0], LABEL_HEIGHT[id], positions[id][1])
-    if (stall) place(labels.current.stall, stall[0], 1.05, stall[1])
+    // The gate's tag hangs below the gate, in the open corner of the base, so it hides neither the
+    // two parcels nor the station labels above them.
+    if (gate) place(labels.current.stall, gate.gate[0], 0, gate.gate[1], 'translate(-50%, 14px)')
   })
 
-  const parcelAt = stall ?? parcelSpot(positions[packageAt])
+  const parcelAt = gate?.yours ?? parcelSpot(positions[packageAt])
   const riding = running && packageAt === 'tests' && packageFrom === 'github'
   const rideSeconds = run ? TEST_RUN_SECONDS - (Date.now() - run.startedAt) / 1000 : TEST_RUN_SECONDS
 
@@ -325,7 +372,7 @@ function Diorama({ labels }: { labels: LabelRefs }) {
       <Conveyor key={layout} from={beltFrom} to={beltTo} colors={colors} slats={slats} />
       <TestRunMotion slats={slats} beltLength={beltLength} shake={shake} />
 
-      {stall && stallNext && conflictOpen && <Barrier at={stall} toward={parcelSpot(positions[stallNext])} colors={colors} />}
+      <MergeGate phase={phase} points={gate} theirsFrom={stallNext ? parcelSpot(positions[stallNext]) : null} colors={colors} />
 
       <Parcel target={[parcelAt[0], PARCEL_Y, parcelAt[1]]} snapKey={layout} colors={colors} kind={riding ? 'ride' : 'hop'} seconds={riding ? rideSeconds : PACKAGE_SECONDS} />
     </>

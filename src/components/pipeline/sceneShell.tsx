@@ -20,12 +20,39 @@ export class SceneBoundary extends Component<{ onError: () => void; fallback: Re
 
 // True from the first moment after the page has painted. Starting a 3D download here,
 // not during the first render, means the board, chat and editor appear first.
+//
+// The browser reports "first contentful paint" (the moment the first text or picture reaches
+// the screen) as a performance entry, and a PerformanceObserver is how a page listens for those
+// entries. Waiting for that entry keeps the rule exact even on a slow machine, where the screen
+// can lag well behind the page's own code. A view opened later (the page has long since painted)
+// is ready at once.
+const FCP = 'first-contentful-paint'
+const hasPainted = () => typeof performance !== 'undefined' && performance.getEntriesByName?.(FCP).length > 0
+const canObservePaint = () => typeof PerformanceObserver !== 'undefined' && (PerformanceObserver.supportedEntryTypes ?? []).includes('paint')
+
 export function useAfterFirstPaint(): boolean {
-  const [ready, setReady] = useState(false)
+  const [ready, setReady] = useState(hasPainted)
   useEffect(() => {
-    const id = window.setTimeout(() => setReady(true), 0)
-    return () => window.clearTimeout(id)
-  }, [])
+    if (ready) return
+    if (canObservePaint()) {
+      const observer = new PerformanceObserver((list) => {
+        if (list.getEntriesByName(FCP).length > 0) setReady(true)
+      })
+      // `buffered` also delivers an entry recorded before this observer started.
+      observer.observe({ type: 'paint', buffered: true })
+      return () => observer.disconnect()
+    }
+    // Browsers without paint timing: requestAnimationFrame runs just before the next frame is
+    // drawn, and a timeout set inside it runs just after.
+    let timeout = 0
+    const frame = window.requestAnimationFrame(() => {
+      timeout = window.setTimeout(() => setReady(true), 0)
+    })
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.clearTimeout(timeout)
+    }
+  }, [ready])
   return ready
 }
 
