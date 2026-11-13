@@ -13,7 +13,9 @@ import { useProgressStore } from '../store/progressStore'
 // Phase 8: the landing page at "/". It shows the game's own world (the diorama), walks one change
 // through it, introduces the five roles and explains how to play, then leads into the game at
 // /play. Unlike the game, the page scrolls as a whole and works on a phone.
-const WRAP = 'mx-auto w-full max-w-6xl px-4 sm:px-6'
+// The page spans the whole window, with side padding that grows on wider screens. Long lines of
+// body text keep their own max width (max-w-2xl) so they stay easy to read.
+const WRAP = 'w-full px-4 sm:px-6 lg:px-10 2xl:px-16'
 const SECTION = 'scroll-mt-14 border-t border-line py-16 lg:py-20'
 const NAV = [
   { href: '#follow', label: STORY.title },

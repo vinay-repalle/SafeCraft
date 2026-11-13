@@ -16,6 +16,8 @@ export const HERO = {
   lead: 'SyncCraft is a free simulator that runs in your browser. You join a small team building a food ordering app, pick up a ticket and carry one change from the board to the live app, through branches, pull requests, tests and merge conflicts.',
   note: 'Free. No sign-up. Your progress stays in this browser.',
   howToPlay: 'How to play',
+  // Shown over the 3D hero only (the still picture cannot be turned).
+  drag: 'Drag to turn. Double-click to reset.',
 }
 
 // The scroll story. Each stop is one text card beside the 3D scene; story.ts says what the

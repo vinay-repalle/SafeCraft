@@ -2,8 +2,10 @@
 // the station models are shared with the game's scenes, so they download once.
 //
 // One component draws two things:
-//   hero   the whole diorama, still. The camera settles once when it first appears (a small turn
-//          and zoom, about a second and a half) and then stays still.
+//   hero   the whole diorama. The camera settles once when it first appears (a small turn and
+//          zoom, about a second and a half) and then stays still until the reader drags it:
+//          dragging sideways turns the diorama round, dragging up or down tilts the view, and a
+//          double-click puts it back. It never moves on its own.
 //   story  "Follow one order". The page's scroll position (storyProgress.ts) sets the camera, the
 //          parcel, the conveyor and the merge gate (story.ts). Nothing moves unless the reader
 //          scrolls, and scrolling up plays it backward.
@@ -34,7 +36,77 @@ const SETTLE_TURN = -0.22 // radians about the vertical axis at the start of the
 const SETTLE_ZOOM = 0.86 // share of the final zoom at the start of the settle
 const CAMERA_DISTANCE = 40
 const EDGE_PX = 6
-const UP = new Vector3(0, 1, 0)
+
+// Dragging the hero. The camera sits on an imaginary sphere around the diorama: "azimuth" is how
+// far round it is (like a compass bearing) and "elevation" how high above the floor it looks
+// from. The isometric view is azimuth 45 degrees, elevation about 35 degrees (the (1,1,1) line).
+const TURN_PER_PX = 0.008 // radians per pixel dragged
+const BASE_AZIMUTH = Math.atan2(VIEW_DIRECTION.x, VIEW_DIRECTION.z)
+const BASE_ELEVATION = Math.asin(VIEW_DIRECTION.y)
+const MIN_ELEVATION = 0.2 // about 12 degrees: never down at floor level
+const MAX_ELEVATION = 1.4 // about 80 degrees: nearly straight down, never past it
+// Turned away from the isometric view, the diorama's corners can poke past the fitted frame, so
+// the camera eases out a little the further it is turned.
+const TURNED_ZOOM_OUT = 0.14
+
+type Orbit = { yaw: number; pitch: number; dragging: number | null; x: number; y: number }
+
+// Pointer events cover mouse, pen and touch in one API. "Pointer capture" keeps sending moves to
+// the canvas while the button is held, even if the pointer leaves it. On touch, `touch-action:
+// pan-y` lets an up-and-down swipe still scroll the page; only a sideways drag turns the scene.
+function useDragToTurn(enabled: boolean): MutableRefObject<Orbit> {
+  const orbit = useRef<Orbit>({ yaw: 0, pitch: 0, dragging: null, x: 0, y: 0 })
+  const el = useThree((s) => s.gl.domElement)
+  const invalidate = useThree((s) => s.invalidate)
+  useEffect(() => {
+    if (!enabled) return
+    const o = orbit.current
+    el.style.touchAction = 'pan-y'
+    el.style.cursor = 'grab'
+    const down = (e: PointerEvent) => {
+      if (e.button !== 0) return
+      o.dragging = e.pointerId
+      o.x = e.clientX
+      o.y = e.clientY
+      el.setPointerCapture(e.pointerId)
+      el.style.cursor = 'grabbing'
+    }
+    const move = (e: PointerEvent) => {
+      if (o.dragging !== e.pointerId) return
+      o.yaw -= (e.clientX - o.x) * TURN_PER_PX
+      const elevation = BASE_ELEVATION + o.pitch + (e.clientY - o.y) * TURN_PER_PX
+      o.pitch = Math.min(MAX_ELEVATION, Math.max(MIN_ELEVATION, elevation)) - BASE_ELEVATION
+      o.x = e.clientX
+      o.y = e.clientY
+      invalidate()
+    }
+    const up = (e: PointerEvent) => {
+      if (o.dragging !== e.pointerId) return
+      o.dragging = null
+      if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId)
+      el.style.cursor = 'grab'
+    }
+    const reset = () => {
+      o.yaw = 0
+      o.pitch = 0
+      invalidate()
+    }
+    el.addEventListener('pointerdown', down)
+    el.addEventListener('pointermove', move)
+    el.addEventListener('pointerup', up)
+    el.addEventListener('pointercancel', up)
+    el.addEventListener('dblclick', reset)
+    return () => {
+      el.removeEventListener('pointerdown', down)
+      el.removeEventListener('pointermove', move)
+      el.removeEventListener('pointerup', up)
+      el.removeEventListener('pointercancel', up)
+      el.removeEventListener('dblclick', reset)
+      el.style.cursor = ''
+    }
+  }, [enabled, el, invalidate])
+  return orbit
+}
 
 function Diorama({ variant, labels, onFirstFrame }: { variant: LandingVariant; labels: LabelRefs; onFirstFrame: () => void }) {
   const frames: readonly StoryFrame[] = variant === 'hero' ? [HERO_FRAME] : STORY_FRAMES
@@ -44,6 +116,7 @@ function Diorama({ variant, labels, onFirstFrame }: { variant: LandingVariant; l
   const camera = useThree((s) => s.camera) as OrthographicCamera
   const invalidate = useThree((s) => s.invalidate)
   const reduceMotion = usePrefersReducedMotion()
+  const orbit = useDragToTurn(variant === 'hero')
 
   // The current card decides the colours and which models stand (a re-render only when the
   // card changes). Everything continuous is read straight from the store in the frame loop.
@@ -93,14 +166,22 @@ function Diorama({ variant, labels, onFirstFrame }: { variant: LandingVariant; l
     if (variant === 'hero') {
       look.current.copy(fit.current.target)
       const s = settle.current
+      let turn = 0
       if (!s.done && !reduceMotion) {
         if (s.start < 0) s.start = performance.now()
         const k = ease(Math.min(1, (performance.now() - s.start) / 1000 / SETTLE_SECONDS))
-        dir.current.applyAxisAngle(UP, SETTLE_TURN * (1 - k))
+        turn = SETTLE_TURN * (1 - k)
         zoom *= SETTLE_ZOOM + (1 - SETTLE_ZOOM) * k
         if (k >= 1) s.done = true
         else state.invalidate()
       }
+      // Where the reader has dragged it to, on top of the settle turn.
+      const { yaw, pitch } = orbit.current
+      const azimuth = BASE_AZIMUTH + yaw + turn
+      const elevation = BASE_ELEVATION + pitch
+      dir.current.set(Math.cos(elevation) * Math.sin(azimuth), Math.sin(elevation), Math.cos(elevation) * Math.cos(azimuth))
+      const turned = Math.min(1, Math.abs(Math.sin(yaw * 2)) + Math.abs(pitch))
+      zoom *= 1 - TURNED_ZOOM_OUT * turned
     } else {
       look.current.set(...pose.focus)
     }

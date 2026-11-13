@@ -102,6 +102,7 @@ Built 2026-11-13. Audit: [AUDIT-phase-8.md](AUDIT-phase-8.md).
 - [x] Reduced motion and no WebGL: a still picture per scroll stop (also on a weak device, a failed chunk or a lost WebGL context)
 - [x] Copy in `src/content/landing.ts`; tests for the scroll-to-stop logic and the routes. Also tests for the still pictures and the copy rules; 322 tests
 - [x] Unslop audit and performance check: AUDIT-phase-8.md
+- [x] Owner feedback (2026-11-13): the page spans the full window width (side padding only); the hero 3D scene turns and tilts with a mouse or touch drag, double-click resets (`useDragToTurn` in `LandingScene.tsx`); "Follow one order" cards stack as a deck, each new stop sliding up over the last (sticky slots in `LandingPictures.tsx`, landing points fed to `progressFromCenters`)
 - [ ] Owner check of the "done when" gate, then Git
 
 ## Open items
