@@ -1,11 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { GUIDE_ORDER, guides } from './guides'
+import { GUIDE_ORDER, HOW_TO_PLAY_SLUG, guides } from './guides'
 import { jargon } from './index'
 
 describe('Field Guide content', () => {
   it('ships at least the five articles the PRD asks for, and loads every listed one', () => {
     expect(guides.length).toBeGreaterThanOrEqual(5)
-    expect(guides.map((g) => g.slug)).toEqual([...GUIDE_ORDER])
+    expect(guides.map((g) => g.slug)).toEqual([HOW_TO_PLAY_SLUG, ...GUIDE_ORDER])
+  })
+
+  it('puts How to play first, with the five levels from the level data', () => {
+    const how = guides[0]
+    expect(how.title).toBe('How to play')
+    const levels = how.blocks.find((b, i) => b.kind === 'ol' && how.blocks[i - 2]?.kind === 'h2' && (how.blocks[i - 2] as { text: string }).text === 'The five levels')
+    expect(levels && levels.kind === 'ol' ? levels.items.length : 0).toBe(5)
   })
 
   it('gives every article a title, a summary and a two minute read at most', () => {

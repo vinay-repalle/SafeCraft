@@ -273,3 +273,18 @@ export function ParcelModel({ c, body, ribbon }: { c: SceneColors; body?: string
     </group>
   )
 }
+
+// The order ticket: a paper slip with a coloured band, like the ticket tag on the board.
+// Shared by the ticket journey (Team view) and the landing page's scenes.
+export function TicketModel({ c }: { c: SceneColors }) {
+  return (
+    <group rotation={[0, 0.35, 0]}>
+      <Part size={[0.44, 0.03, 0.58]} pos={[0, 0.015, 0]} color={c.card} />
+      <Part size={[0.44, 0.032, 0.12]} pos={[0, 0.016, -0.23]} color={c.accent} />
+      <Part size={[0.3, 0.034, 0.03]} pos={[-0.04, 0.017, -0.06]} color={c.ink3} />
+      <Part size={[0.22, 0.034, 0.03]} pos={[-0.08, 0.017, 0.06]} color={c.ink3} />
+      {/* The torn edge, as on the tag. */}
+      <Part size={[0.44, 0.034, 0.015]} pos={[0, 0.017, 0.17]} color={c.ink2} />
+    </group>
+  )
+}

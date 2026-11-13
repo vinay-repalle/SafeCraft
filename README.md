@@ -21,7 +21,7 @@ npm run build    # typecheck and production build
 npm test         # engine, store, content and export tests
 ```
 
-Desktop only: designed for windows 1280px wide or more.
+The game (`/play`) is desktop only: designed for windows 1280px wide or more. The landing page (`/`) also works on a phone.
 
 ## Docs
 

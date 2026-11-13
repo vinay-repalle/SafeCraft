@@ -1,0 +1,7 @@
+# Read by Cloudflare Pages (and Netlify). Vite copies this file into dist/.
+# The game lives at /play, but there is no file of that name: it is the same index.html, which
+# reads the address and shows the game (src/app/route.ts). These rules answer a direct visit,
+# a bookmark or a reload of /play with index.html, keeping /play in the address bar (200, not
+# a redirect). The landing page at / is index.html already.
+/play     /index.html   200
+/play/    /index.html   200

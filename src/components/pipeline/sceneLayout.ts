@@ -74,3 +74,20 @@ export function isWeakDevice(hints: { deviceMemory?: number; hardwareConcurrency
   if (renderer && /swiftshader|llvmpipe|software|basic render/i.test(renderer)) return true
   return false
 }
+
+// The parcel waits on the front corner of each pad, this far from the station centre on both
+// axes. Its base sits on the conveyor belt's height so it rides the belt without sinking in.
+// Shared by the game's diorama, the landing page's scenes and the landing page's still pictures.
+export const PARCEL_OFFSET: XZ = [0.85, 0.85]
+export const PARCEL_Y = 0.19
+export const parcelSpot = (p: XZ): XZ => [p[0] + PARCEL_OFFSET[0], p[1] + PARCEL_OFFSET[1]]
+
+// The conveyor between GitHub and the test server: how far it runs past each parcel spot, so
+// the parcel starts and ends on the belt, and the gap between its slats.
+export const BELT_OVERHANG = 0.3
+export const SLAT_GAP = 0.3
+
+// Height of the label above each station, and the highest thing in the scene (used to fit the
+// camera). Plain numbers, so the still pictures (isoStill.ts) frame the scene the same way.
+export const LABEL_HEIGHT: Record<Station, number> = { client: 2.3, pm: 2.1, dev: 1.9, github: 2.55, tests: 2.2, live: 2.05 }
+export const SCENE_TOP = 2.9

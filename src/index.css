@@ -136,8 +136,8 @@
     /* Digits are the same width everywhere, so numbers line up. */
     font-variant-numeric: tabular-nums;
     -webkit-font-smoothing: antialiased;
-    /* Desktop only: no small-screen layout. Below 1280px the page scrolls sideways. */
-    min-width: 1280px;
+    /* The game is desktop only and sets its own minimum width (src/app/App.tsx). The landing
+       page works at any width, so the body has none. */
   }
 
   button {

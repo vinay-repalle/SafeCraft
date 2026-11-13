@@ -16,7 +16,7 @@ import { travel } from '../pipeline/pipelineMotion'
 import { placeLabel } from '../pipeline/placeLabel'
 import { mix, useSceneColors, type SceneColors } from '../pipeline/sceneColors'
 import { PACKAGE_SECONDS } from '../pipeline/sceneLayout'
-import { Blob, Cylinder, Desk, PAD_HEIGHT, Part, Person, Shadow, useShadowTexture } from '../pipeline/stations'
+import { Blob, Cylinder, Desk, PAD_HEIGHT, Part, Person, Shadow, TicketModel, useShadowTexture } from '../pipeline/stations'
 import { DESK_ORDER, deskX, rowFit } from './ticketLayout'
 
 // Labels laid over the canvas: one per desk and one that follows the ticket.
@@ -57,20 +57,6 @@ function aimCamera(camera: OrthographicCamera, zoom: number) {
   camera.zoom = zoom
   camera.updateProjectionMatrix()
   camera.updateMatrixWorld(true)
-}
-
-// The order ticket: a paper slip with a coloured band, like the ticket tag on the board.
-function TicketModel({ c }: { c: SceneColors }) {
-  return (
-    <group rotation={[0, 0.35, 0]}>
-      <Part size={[0.44, 0.03, 0.58]} pos={[0, 0.015, 0]} color={c.card} />
-      <Part size={[0.44, 0.032, 0.12]} pos={[0, 0.016, -0.23]} color={c.accent} />
-      <Part size={[0.3, 0.034, 0.03]} pos={[-0.04, 0.017, -0.06]} color={c.ink3} />
-      <Part size={[0.22, 0.034, 0.03]} pos={[-0.08, 0.017, 0.06]} color={c.ink3} />
-      {/* The torn edge, as on the tag. */}
-      <Part size={[0.44, 0.034, 0.015]} pos={[0, 0.017, 0.17]} color={c.ink2} />
-    </group>
-  )
 }
 
 // The ticket follows the journey one stop at a time. New stops are queued, so when the engine
